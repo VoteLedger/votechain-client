@@ -1,8 +1,8 @@
-import { Form, redirect } from "@remix-run/react";
+import { redirect } from "@remix-run/react";
 import { ActionFunction } from "@remix-run/node";
 import { Card } from "~/components/ui/card";
-import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
+import { useSDK } from "@metamask/sdk-react";
 
 export const action: ActionFunction = async ({ request }) => {
   const formData = await request.formData();
@@ -23,6 +23,16 @@ export const action: ActionFunction = async ({ request }) => {
 
 export default function LoginPage() {
   // const actionData = useActionData();
+  const { sdk } = useSDK();
+
+  const connect = async () => {
+    try {
+      const accounts = await sdk?.connect();
+      console.log("connected to account", accounts?.[0]);
+    } catch (err) {
+      console.warn("failed to connect..", err);
+    }
+  };
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
@@ -30,35 +40,37 @@ export default function LoginPage() {
         <h2 className="text-xl font-bold text-center mb-6">
           Login to Your Account
         </h2>
-        <Form method="post">
-          <div className="mb-4">
-            <Input
-              type="email"
-              name="email"
-              placeholder="Enter your email"
-              required
-              className="w-full p-2 border rounded"
-            />
-          </div>
-          <div className="mb-4">
-            <Input
-              type="password"
-              name="password"
-              placeholder="Enter your password"
-              required
-              className="w-full p-2 border rounded"
-            />
-          </div>
-          {/* {actionData?.error && ( */}
-          {/*   <p className="text-red-500 text-sm mb-4">{actionData.error}</p> */}
-          {/* )} */}
-          <Button
-            type="submit"
-            className="w-full bg-blue-500 text-white py-2 rounded"
-          >
-            Login
-          </Button>
-        </Form>
+        {/* <Form method="post"> */}
+        {/*   <div className="mb-4"> */}
+        {/*     <Input */}
+        {/*       type="email" */}
+        {/*       name="email" */}
+        {/*       placeholder="Enter your email" */}
+        {/*       required */}
+        {/*       className="w-full p-2 border rounded" */}
+        {/*       onClick={() => console.log("clicked")} */}
+        {/*     /> */}
+        {/*   </div> */}
+        {/*   <div className="mb-4"> */}
+        {/*     <Input */}
+        {/*       type="password" */}
+        {/*       name="password" */}
+        {/*       placeholder="Enter your password" */}
+        {/*       required */}
+        {/*       className="w-full p-2 border rounded" */}
+        {/*     /> */}
+        {/*   </div> */}
+        {/* {actionData?.error && ( */}
+        {/*   <p className="text-red-500 text-sm mb-4">{actionData.error}</p> */}
+        {/* )} */}
+        <Button
+          type="submit"
+          className="w-full bg-blue-500 text-white py-2 rounded"
+          onClick={connect}
+        >
+          Login
+        </Button>
+        {/* </Form> */}
       </Card>
     </div>
   );
