@@ -1,14 +1,11 @@
-import { ApiResult } from "~/types/interfaces";
+import { PollApiResponse } from "~/types/api";
+import { ApiEndpointUrl } from "~/lib/api";
+import { fetcher } from "~/lib/fetcher";
+import { Poll } from "~/types/services";
 
-type PollData = {
-  id: number;
-  title: string;
-  description: string;
-  options: string[];
-  votes: number[];
-};
-
-export type Poll = ApiResult<PollData>;
-
-// FIXME: We need first to fix prisma!
-export async function getPolls() {}
+export async function getPolls(): Promise<Poll[]> {
+  // Fetch polls from database
+  const resp = await fetcher<PollApiResponse>(ApiEndpointUrl.getPolls);
+  // Return the response
+  return resp.data;
+}
