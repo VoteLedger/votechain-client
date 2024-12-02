@@ -4,6 +4,7 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useLoaderData,
 } from "@remix-run/react";
 import type { LinksFunction } from "@remix-run/node";
 
@@ -11,6 +12,7 @@ import tailwind_style from "./tailwind.css?url";
 import leaftlet_style from "./styles/leaflet.css?url";
 import { Navbar } from "./components/ui/navbar";
 import { Toaster } from "./components/ui/toaster";
+import { Providers } from "./providers";
 
 export const links: LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -29,7 +31,19 @@ export const links: LinksFunction = () => [
   { rel: "stylesheet", href: leaftlet_style },
 ];
 
+export const loader = async () => {
+  return Response.json({
+    ENV: {
+      REMIX_APP_URL: process.env.REMIX_APP_URL,
+      REMIX_API_ROUTE: process.env.REMIX_API_ROUTE,
+    },
+  });
+};
+
 export function Layout({ children }: { children: React.ReactNode }) {
+  // load environment variables
+  const data = useLoaderData<typeof loader>();
+
   return (
     <html lang="en">
       <head>
@@ -40,10 +54,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <Navbar />
-        <main>{children}</main>
+        <Providers>
+          <main>{children}</main>
+        </Providers>
         <Toaster />
         <ScrollRestoration />
         <Scripts />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.ENV = ${JSON.stringify(data.env)}`,
+          }}
+        />
       </body>
     </html>
   );
