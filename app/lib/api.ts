@@ -1,11 +1,13 @@
 import { ApiEndpoints } from "~/types/api";
 
 // export list of available API endpoints
-if (!process.env.API_URL) {
-  throw new Error("API_URL is not defined. Please define it in .env file");
+if (!process.env.REMIX_APP_URL) {
+  throw new Error(
+    "REMIX_APP_URL is not defined. Please define it in .env file"
+  );
 }
 
-const _API_URL = process.env.API_URL || "http://localhost:3000";
+const _API_URL = process.env.REMIX_API_ROUTE || "http://localhost:3000";
 
 export const ApiEndpointUrl: ApiEndpoints = {
   getPolls: () => `${_API_URL}/polls`,

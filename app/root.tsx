@@ -32,17 +32,22 @@ export const links: LinksFunction = () => [
 ];
 
 export const loader = async () => {
-  return Response.json({
+  console.log(process.env);
+  return {
     ENV: {
       REMIX_APP_URL: process.env.REMIX_APP_URL,
-      REMIX_API_ROUTE: process.env.REMIX_API_ROUTE,
+      REMIX_API_URL: process.env.REMIX_API_URL,
     },
-  });
+  };
 };
 
 export function Layout({ children }: { children: React.ReactNode }) {
   // load environment variables
   const data = useLoaderData<typeof loader>();
+  console.log(data, data.ENV.REMIX_APP_URL, data.ENV.REMIX_API_URL);
+
+  // Inject environment variables into the window object
+  const htmlInject = `window.ENV = ${JSON.stringify(data.ENV)}`;
 
   return (
     <html lang="en">
@@ -62,7 +67,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Scripts />
         <script
           dangerouslySetInnerHTML={{
-            __html: `window.ENV = ${JSON.stringify(data.env)}`,
+            __html: htmlInject,
           }}
         />
       </body>
