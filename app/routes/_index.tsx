@@ -18,7 +18,6 @@ export const meta: MetaFunction = () => {
     },
   ];
 };
-
 export const loader = async (): Promise<LoaderData> => {
   // Fetch polls from database
   try {
