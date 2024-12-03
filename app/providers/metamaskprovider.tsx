@@ -16,7 +16,7 @@ export const MetaMaskProviderWrapper: React.FC<MetaMaskProviderProps> = ({
         checkInstallationImmediately: false,
         dappMetadata: {
           name: "VoteChain",
-          url: globalThis.window.ENV.REMIX_APP_URL,
+          url: process.env.REMIX_APP_URL,
         },
       }}
     >

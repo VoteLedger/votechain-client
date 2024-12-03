@@ -32,7 +32,7 @@ export const links: LinksFunction = () => [
 ];
 
 export const loader = async () => {
-  console.log(process.env);
+  console.log("Loader: root");
   return {
     ENV: {
       REMIX_APP_URL: process.env.REMIX_APP_URL,
@@ -44,11 +44,9 @@ export const loader = async () => {
 export function Layout({ children }: { children: React.ReactNode }) {
   // load environment variables
   const data = useLoaderData<typeof loader>();
-  console.log(data, data.ENV.REMIX_APP_URL, data.ENV.REMIX_API_URL);
+  console.log("Root Data: ", data);
 
-  // Inject environment variables into the window object
-  const htmlInject = `window.ENV = ${JSON.stringify(data.ENV)}`;
-
+  // return the layout
   return (
     <html lang="en">
       <head>
@@ -65,11 +63,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Toaster />
         <ScrollRestoration />
         <Scripts />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: htmlInject,
-          }}
-        />
       </body>
     </html>
   );

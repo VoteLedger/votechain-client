@@ -18,6 +18,7 @@ export const meta: MetaFunction = () => {
     },
   ];
 };
+
 export const loader = async (): Promise<LoaderData> => {
   // Fetch polls from database
   try {
@@ -28,7 +29,11 @@ export const loader = async (): Promise<LoaderData> => {
       polls: polls,
     };
   } catch (error) {
-    console.error(error);
+    //
+    console.warn(
+      "An error occurred while loading polls from API: ",
+      (error as Error).message
+    );
 
     // return empty polls
     return {
@@ -42,7 +47,7 @@ export default function Index() {
   // retrieve the polls from the loader data
   const data = useLoaderData<typeof loader>();
 
-  console.log(data);
+  console.log("[Index] Polls: ", data);
 
   return (
     <div className="container mx-auto mt-8">
