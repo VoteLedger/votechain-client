@@ -13,4 +13,5 @@ export const ApiEndpointUrl: ApiEndpoints = {
   getPolls: () => `${_API_URL}/polls`,
   getPoll: (id: string) => `${_API_URL}/polls/${id}`,
   submitVote: () => `${_API_URL}/votes`,
+  signIn: () => `${_API_URL}/auth/signin`,
 };

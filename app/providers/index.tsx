@@ -1,9 +1,13 @@
-import { MetaMaskProviderWrapper } from "./metamaskprovider";
+import { PropsWithChildren } from "react";
+import { MetaMaskProviderWrapper } from "./metamaskprovider.client";
+import { ClientOnly } from "remix-utils/client-only";
 
-type ProvidersProps = {
-  children: React.ReactNode;
-};
-
-export const Providers: React.FC<ProvidersProps> = ({ children }) => {
-  return <MetaMaskProviderWrapper>{children}</MetaMaskProviderWrapper>;
+export const Providers: React.FC<PropsWithChildren> = ({
+  children,
+}: PropsWithChildren) => {
+  return (
+    <ClientOnly>
+      {() => <MetaMaskProviderWrapper>{children}</MetaMaskProviderWrapper>}
+    </ClientOnly>
+  );
 };

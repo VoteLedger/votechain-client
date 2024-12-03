@@ -4,14 +4,11 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
-  useLoaderData,
 } from "@remix-run/react";
 import type { LinksFunction } from "@remix-run/node";
 
 import tailwind_style from "./tailwind.css?url";
-import leaftlet_style from "./styles/leaflet.css?url";
 import { Navbar } from "./components/ui/navbar";
-import { Toaster } from "./components/ui/toaster";
 import { Providers } from "./providers";
 
 export const links: LinksFunction = () => [
@@ -27,24 +24,12 @@ export const links: LinksFunction = () => [
   },
   // Stylesheet for the Tailwind CSS framework
   { rel: "stylesheet", href: tailwind_style },
-  // Stylesheet for the Leaflet map library
-  { rel: "stylesheet", href: leaftlet_style },
 ];
-
-export const loader = async () => {
-  console.log("Loader: root");
-  return {
-    ENV: {
-      REMIX_APP_URL: process.env.REMIX_APP_URL,
-      REMIX_API_URL: process.env.REMIX_API_URL,
-    },
-  };
-};
 
 export function Layout({ children }: { children: React.ReactNode }) {
   // load environment variables
-  const data = useLoaderData<typeof loader>();
-  console.log("Root Data: ", data);
+  // const data = useLoaderData<typeof loader>();
+  // console.log("Root Data: ", data);
 
   // return the layout
   return (
@@ -57,10 +42,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <Navbar />
-        <Providers>
-          <main>{children}</main>
-        </Providers>
-        <Toaster />
+        <main>{children}</main>
         <ScrollRestoration />
         <Scripts />
       </body>
@@ -69,5 +51,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  return <Outlet />;
+  return (
+    <Providers>
+      <Outlet />
+    </Providers>
+  );
 }

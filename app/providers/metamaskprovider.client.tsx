@@ -1,12 +1,16 @@
 import { MetaMaskProvider } from "@metamask/sdk-react";
+import { PropsWithChildren } from "react";
 
-type MetaMaskProviderProps = {
-  children: React.ReactNode;
-};
+type MetaMaskProviderProps = PropsWithChildren<{
+  name?: string;
+  url?: string;
+}>;
 
 export const MetaMaskProviderWrapper: React.FC<MetaMaskProviderProps> = ({
   children,
-}) => {
+  name,
+  url,
+}: MetaMaskProviderProps) => {
   return (
     <MetaMaskProvider
       sdkOptions={{
@@ -15,8 +19,8 @@ export const MetaMaskProviderWrapper: React.FC<MetaMaskProviderProps> = ({
         },
         checkInstallationImmediately: false,
         dappMetadata: {
-          name: "VoteChain",
-          url: process.env.REMIX_APP_URL,
+          name,
+          url,
         },
       }}
     >

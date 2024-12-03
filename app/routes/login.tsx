@@ -1,76 +1,85 @@
-import { redirect } from "@remix-run/react";
-import { ActionFunction } from "@remix-run/node";
 import { Card } from "~/components/ui/card";
-import { Button } from "~/components/ui/button";
-import { useSDK } from "@metamask/sdk-react";
+import { LoginButton } from "~/components/custom/loginbutton.client";
+import { Form } from "@remix-run/react";
+import { ActionFunctionArgs } from "@remix-run/node";
+import { signIn } from "~/services/auth";
+import { LoginActionInput, LoginActionResponse } from "~/types/actions";
 
-export const action: ActionFunction = async ({ request }) => {
-  const formData = await request.formData();
-  const email = formData.get("email");
-  const password = formData.get("password");
-
-  console.log("Email:", email);
-
-  // Perform authentication logic here
-  // E.g., authenticate with your back-end, set session cookies, etc.
-  if (email === "test@example.com" && password === "password") {
-    return redirect("/dashboard");
+export async function action({ request }: ActionFunctionArgs) {
+  if (request.method !== "POST") {
+    return new Response(null, {
+      status: 405,
+      statusText: "Method Not Allowed",
+    });
   }
 
-  // return response
-  return Response.json({ error: "Invalid email or password" }, { status: 401 });
-};
+  // extract form data
+  const body = await request.formData();
+  console.log("Form data:", body);
+
+  // ensure signature is present
+  if (!body.has("signature")) {
+    console.warn("Signature is required");
+    return new Response(JSON.stringify({ message: "Signature is required" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  // send request to the server and sign in / authenticate
+  const signature = body.get("signature") as string;
+  try {
+    // FIXME: include the token in the response
+    await signIn(signature);
+    const body = { data: { token: "token", accessToken: "accessToken" } };
+    return Response.json(body, { status: 200 });
+  } catch (error) {
+    if (error instanceof Error) {
+      return Response.json({ error: error.message }, { status: 400 });
+    } else {
+      return Response.json({ error: "Unknown error" }, { status: 500 });
+    }
+  }
+
+  // reutrn success message
+}
 
 export default function LoginPage() {
-  // const actionData = useActionData();
-  const { sdk } = useSDK();
-
-  const connect = async () => {
-    try {
-      const accounts = await sdk?.connect();
-      console.log("connected to account", accounts?.[0]);
-    } catch (err) {
-      console.warn("failed to connect..", err);
-    }
-  };
-
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <Card className="w-full max-w-md p-8">
-        <h2 className="text-xl font-bold text-center mb-6">
-          Login to Your Account
-        </h2>
-        {/* <Form method="post"> */}
-        {/*   <div className="mb-4"> */}
-        {/*     <Input */}
-        {/*       type="email" */}
-        {/*       name="email" */}
-        {/*       placeholder="Enter your email" */}
-        {/*       required */}
-        {/*       className="w-full p-2 border rounded" */}
-        {/*       onClick={() => console.log("clicked")} */}
-        {/*     /> */}
-        {/*   </div> */}
-        {/*   <div className="mb-4"> */}
-        {/*     <Input */}
-        {/*       type="password" */}
-        {/*       name="password" */}
-        {/*       placeholder="Enter your password" */}
-        {/*       required */}
-        {/*       className="w-full p-2 border rounded" */}
-        {/*     /> */}
-        {/*   </div> */}
-        {/* {actionData?.error && ( */}
-        {/*   <p className="text-red-500 text-sm mb-4">{actionData.error}</p> */}
-        {/* )} */}
-        <Button
-          type="submit"
-          className="w-full bg-blue-500 text-white py-2 rounded"
-          onClick={connect}
-        >
-          Login
-        </Button>
-        {/* </Form> */}
+        <h2 className="text-xl font-bold text-center mb-6">Authentication</h2>
+        <Form method="post">
+          <LoginButton
+            name="signature"
+            className="w-full bg-blue-500 text-white py-2 rounded"
+            text="Login with MetaMask"
+            onSuccess={(signature) => {
+              console.log("Signature:", signature);
+              fetch("/login.data", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/x-www-form-urlencoded",
+                },
+                body: new URLSearchParams({
+                  signature: signature,
+                } satisfies LoginActionInput),
+              })
+                .then((resp) => resp.json())
+                .then((data) => {
+                  console.log("Data:", data);
+                  if (data.error) {
+                    throw new Error(data.error);
+                  }
+                  // save the token to the local storage
+                  console.log("Token:", data.data.token);
+                })
+                .catch((error) => {
+                  console.error("Error:", error);
+                });
+            }}
+          />
+        </Form>
       </Card>
     </div>
   );
