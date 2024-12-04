@@ -1,9 +1,8 @@
 import { Card } from "~/components/ui/card";
 import { LoginButton } from "~/components/custom/loginbutton.client";
-import { Form } from "@remix-run/react";
+import { Form, useSubmit } from "@remix-run/react";
 import { ActionFunctionArgs } from "@remix-run/node";
 import { signIn } from "~/services/auth";
-import { LoginActionInput, LoginActionResponse } from "~/types/actions";
 
 export async function action({ request }: ActionFunctionArgs) {
   if (request.method !== "POST") {
@@ -17,34 +16,51 @@ export async function action({ request }: ActionFunctionArgs) {
   const body = await request.formData();
   console.log("Form data:", body);
 
-  // ensure signature is present
-  if (!body.has("signature")) {
-    console.warn("Signature is required");
-    return new Response(JSON.stringify({ message: "Signature is required" }), {
+  // Check if all fields are present
+  const fields = ["signature", "message", "nonce"];
+  for (const field of fields) {
+    if (!body.has(field)) {
+      console.warn(`${field} is required`);
+      return new Response(JSON.stringify({ message: `${field} is required` }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+  }
+
+  // send request to the server and sign in / authenticate
+  const signature = body.get("signature") as string;
+  const message = body.get("signature") as string;
+  const nonce = body.get("signature") as string;
+
+  // ensure that nonce is a number
+  if (isNaN(parseInt(nonce))) {
+    return new Response(JSON.stringify({ message: "Nonce must be a number" }), {
       status: 400,
       headers: { "Content-Type": "application/json" },
     });
   }
 
-  // send request to the server and sign in / authenticate
-  const signature = body.get("signature") as string;
   try {
-    // FIXME: include the token in the response
-    await signIn(signature);
+    await signIn(message, parseInt(nonce), signature);
+
+    // FIXME: this is a temporary response
     const body = { data: { token: "token", accessToken: "accessToken" } };
     return Response.json(body, { status: 200 });
   } catch (error) {
+    console.error(error);
     if (error instanceof Error) {
-      return Response.json({ error: error.message }, { status: 400 });
+      const msg = "An error occurred while signing in: " + error.message;
+      return Response.json({ error: msg }, { status: 400 });
     } else {
       return Response.json({ error: "Unknown error" }, { status: 500 });
     }
   }
-
-  // reutrn success message
 }
 
 export default function LoginPage() {
+  const submit = useSubmit();
+
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <Card className="w-full max-w-md p-8">
@@ -54,29 +70,39 @@ export default function LoginPage() {
             name="signature"
             className="w-full bg-blue-500 text-white py-2 rounded"
             text="Login with MetaMask"
-            onSuccess={(signature) => {
-              console.log("Signature:", signature);
-              fetch("/login.data", {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/x-www-form-urlencoded",
-                },
-                body: new URLSearchParams({
-                  signature: signature,
-                } satisfies LoginActionInput),
-              })
-                .then((resp) => resp.json())
-                .then((data) => {
-                  console.log("Data:", data);
-                  if (data.error) {
-                    throw new Error(data.error);
-                  }
-                  // save the token to the local storage
-                  console.log("Token:", data.data.token);
-                })
-                .catch((error) => {
-                  console.error("Error:", error);
-                });
+            onSuccess={(msg, nonce, sign) => {
+              console.log("Signature:", sign);
+
+              // Send form data to the server
+              const formData = new FormData();
+              formData.append("signature", sign);
+              formData.append("message", msg);
+              formData.append("nonce", nonce.toString());
+              submit(formData, { method: "POST" });
+
+              // fetch("/login.data", {
+              //   method: "POST",
+              //   headers: {
+              //     "Content-Type": "application/x-www-form-urlencoded",
+              //   },
+              //   body: new URLSearchParams({
+              //     message: msg,
+              //     signature: sign,
+              //     nonce: nonce.toString(),
+              //   } satisfies LoginActionInput),
+              // })
+              //   .then((resp) => resp.json() as Promise<LoginActionResponse>)
+              //   .then((data) => {
+              //     console.log("Data:", data);
+              //     if (data.error) {
+              //       throw new Error(data.error);
+              //     }
+              //     // save the token to the local storage
+              //     console.log("Token:", data.data.token);
+              //   })
+              //   .catch((error) => {
+              //     console.error("Error:", error);
+              //   });
             }}
           />
         </Form>

@@ -1,10 +1,11 @@
 import { useSDK } from "@metamask/sdk-react";
 import { Button, ButtonProps } from "../ui/button";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { generateMessage } from "~/lib/metamask";
 
 export interface LoginButtonProps extends Omit<ButtonProps, "onClick"> {
   text: string;
-  onSuccess?: (signature: string) => void;
+  onSuccess?: (msg: string, nonce: number, signature: string) => void;
   onFail?: (error: Error) => void;
 }
 
@@ -32,19 +33,22 @@ export const LoginButton: React.FC<LoginButtonProps> = ({
 
     // connect and sign the message
     try {
-      const signResult = await sdk.connectAndSign({
-        msg: "Connect + Sign message",
+      // Generate a random message to sign
+      const { message, nonce } = generateMessage();
+
+      const signature = await sdk.connectAndSign({
+        msg: message,
       });
 
-      console.log("Sign result:", signResult);
+      console.log("Sign result:", signature);
       console.log("Form:", e.target);
-      onSuccess && onSuccess(signResult);
+      onSuccess && onSuccess(message, nonce, signature);
 
       // get parent element of the button
       e.currentTarget.parentElement?.querySelector("form")?.submit();
 
       // lookup parent in the DOM + find the input field
-      setSignature(signResult);
+      setSignature(signature);
     } catch (err) {
       if (err instanceof Error) {
         onFail && onFail(err);

@@ -2,6 +2,8 @@ import { ApiResult } from "./api";
 
 export interface LoginActionInput {
   signature: string;
+  message: string;
+  nonce: string;
 }
 
 export type LoginSuccessActionResponse = ApiResult<{

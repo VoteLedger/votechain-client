@@ -5,17 +5,21 @@ export const fetcher = async <T extends BaseApiResponse>(
   endpoint: Endpoint,
   options: RequestInit = {}
 ) => {
+  console.log("Fetching:", endpoint());
   // Compute endpoint URL and send request
   const res = await fetch(endpoint(), options);
+  console.log("Response status:", res.status);
+
+  // Reject errors
   if (!res.ok) {
-    throw new Error(res.statusText);
+    throw new Error("Request failed");
   }
 
-  // Parse response
-  const parsed = await (res.json() as Promise<T>);
+  // parse the body of the response
+  const parsed = (await res.json()) as T;
 
-  // If error, raise it
+  // If error, raise it, otherwise return the parsed response
   parsed.error && new Error(parsed.error);
-
+  res.ok || new Error("Request failed");
   return parsed;
 };
