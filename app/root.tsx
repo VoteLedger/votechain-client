@@ -27,10 +27,6 @@ export const links: LinksFunction = () => [
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
-  // load environment variables
-  // const data = useLoaderData<typeof loader>();
-  // console.log("Root Data: ", data);
-
   // return the layout
   return (
     <html lang="en">

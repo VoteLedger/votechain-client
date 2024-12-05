@@ -2,7 +2,7 @@ import { PropsWithChildren } from "react";
 import { MetaMaskProviderWrapper } from "./metamaskprovider.client";
 import { ClientOnly } from "remix-utils/client-only";
 import { ToastProvider } from "@radix-ui/react-toast";
-import { AuthProvider } from "./authprovider.client";
+import { AuthProvider } from "./authprovider";
 
 export const Providers: React.FC<PropsWithChildren> = ({
   children,

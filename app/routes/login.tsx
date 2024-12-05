@@ -3,7 +3,7 @@ import { LoginButton } from "~/components/custom/loginbutton.client";
 import { Form, useActionData, useSubmit } from "@remix-run/react";
 import { ActionFunctionArgs } from "@remix-run/node";
 import { signIn } from "~/services/auth";
-import { useAuth } from "~/providers/authprovider.client";
+import { useAuth } from "~/providers/authprovider";
 import { useEffect, useState } from "react";
 import { UserSession } from "~/types/auth";
 
