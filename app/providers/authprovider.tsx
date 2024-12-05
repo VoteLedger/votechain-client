@@ -40,7 +40,6 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
         setIsAuthenticated(true);
       }
     }
-    console.log("current user", currentUser);
   }, [currentUser]);
 
   // Watch access token
@@ -54,7 +53,6 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
         setAccessToken(token);
       }
     }
-    console.log("access token", accessToken);
   }, [accessToken]);
 
   // Watch refresh token
@@ -62,12 +60,10 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
     if (!refreshToken) {
       // try to get refresh token from local storage
       const token = localStorage.getItem("refreshToken");
-      console.log("refresh token", token);
       if (token != null && token !== "undefined") {
         setRefreshToken(token);
       }
     }
-    console.log("refresh token", refreshToken);
   }, [refreshToken]);
 
   // Log in function

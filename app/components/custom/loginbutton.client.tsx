@@ -61,7 +61,6 @@ export const LoginButton: React.FC<LoginButtonProps> = ({
         msg: message,
       });
 
-      console.log("Sign result:", signature);
       onSuccess && onSuccess(message, signature, address, chain_id);
     } catch (err) {
       if (err instanceof Error) {

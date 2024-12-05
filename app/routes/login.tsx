@@ -29,20 +29,29 @@ export async function action({ request }: ActionFunctionArgs) {
 
   // extract form data
   const body = await request.formData();
-  console.log("Form data:", body);
 
   // Check if all fields are present
   const fields = ["signature", "message", "account"];
+  const missingFields = [];
   for (const field of fields) {
     if (!body.has(field)) {
-      console.warn(`${field} is required`);
-      return Response.json(
-        { error: `${field} is required` } satisfies ActionResult,
-        {
-          status: 400,
-        }
-      );
+      missingFields.push(field);
     }
+  }
+
+  // Return comprehensive error listing all missing fields
+  if (missingFields.length > 0) {
+    return new Response(
+      JSON.stringify({
+        error: `Missing fields: ${missingFields.join(", ")}`,
+      }),
+      {
+        status: 400,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
   }
 
   // send request to the server and sign in / authenticate
