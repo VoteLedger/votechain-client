@@ -1,6 +1,7 @@
 import type { MetaFunction } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { VStack, HStack } from "~/components/util/stack";
+import { getSession } from "~/lib/session";
 import { getPolls } from "~/services/polls";
 import { Poll } from "~/types/services";
 
@@ -20,6 +21,10 @@ export const meta: MetaFunction = () => {
 };
 
 export const loader = async (): Promise<LoaderData> => {
+  // First of all, fetch the session
+  const session = await getSession();
+  console.log("[Index] Session: ", session.data);
+
   // Fetch polls from database
   try {
     const polls = await getPolls();
