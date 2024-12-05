@@ -1,11 +1,20 @@
 import { BaseApiResponse, Endpoint } from "~/types/api";
+import { VoteChainSession } from "./session";
 
 // fetcher is a wrapper around fetch that adds the base URL and refresh the token if needed
 export const fetcher = async <T extends BaseApiResponse>(
   endpoint: Endpoint,
-  options: RequestInit = {}
+  options: RequestInit = {},
+  session?: VoteChainSession
 ) => {
-  console.log("Fetching:", endpoint());
+  if (session) {
+    // Add the access token to the headers
+    options.headers = {
+      ...options.headers,
+      Authorization: `Bearer ${session.data.access_token}`,
+    };
+  }
+
   // Compute endpoint URL and send request
   const res = await fetch(endpoint(), options);
   console.log("Response status:", res.status);

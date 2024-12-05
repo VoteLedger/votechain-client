@@ -5,6 +5,8 @@ type SessionFlashData = {
   error: string;
 };
 
+export type VoteChainSession = Session<UserSession, SessionFlashData>;
+
 if (!process.env.REMIX_COOKIE_DOMAIN) {
   throw new Error(
     "REMIX_COOKIE_DOMAIN is not defined. Please define it in .env file"
@@ -24,7 +26,7 @@ const { getSession, commitSession, destroySession } =
       //
       // expires: new Date(Date.now() + 60_000),
       httpOnly: true,
-      maxAge: 60,
+      maxAge: 60 * 60 * 24 * 7, // 7 days
       path: "/",
       sameSite: "lax",
       secrets: ["s3cret1"],
@@ -32,7 +34,7 @@ const { getSession, commitSession, destroySession } =
     },
   });
 
-const isSession = (session: Session<UserSession, SessionFlashData>) => {
+const isSession = (session: VoteChainSession) => {
   return (
     session.data.account_address !== undefined &&
     session.data.refresh_token !== undefined &&

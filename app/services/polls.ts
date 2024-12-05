@@ -1,11 +1,21 @@
 import { PollApiResponse } from "~/types/api";
-import { ApiEndpointUrl } from "~/lib/api";
+import { ApiEndpointUrl, ErrorWithStatus } from "~/lib/api";
 import { fetcher } from "~/lib/fetcher";
 import { Poll } from "~/types/services";
+import { VoteChainSession } from "~/lib/session";
 
-export async function getPolls(): Promise<Poll[]> {
+export async function getPolls(session: VoteChainSession): Promise<Poll[]> {
   // Fetch polls from database
-  const resp = await fetcher<PollApiResponse>(ApiEndpointUrl.getPolls);
+  const { response, statusCode } = await fetcher<PollApiResponse>(
+    ApiEndpointUrl.getPolls,
+    {},
+    session
+  );
+
+  // Raise an error if the response is not successful
+  if (response.error) {
+    throw new ErrorWithStatus(response.error, statusCode);
+  }
   // Return the response
-  return resp.data;
+  return response.data;
 }

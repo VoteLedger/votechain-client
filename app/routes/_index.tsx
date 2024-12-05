@@ -29,7 +29,7 @@ export const loader: LoaderFunction = async ({ request }) => {
 
   // Fetch polls from database
   try {
-    const polls = await getPolls();
+    const polls = await getPolls(session);
 
     // return polls
     return {
