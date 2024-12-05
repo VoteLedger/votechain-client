@@ -123,13 +123,10 @@ export async function action({ request }: ActionFunctionArgs) {
     session.set("account_address", account);
     session.set("access_token", tokenPair.token);
 
-    const sessionCookie = await commitSession(session);
-    console.log("sessionCookie", sessionCookie);
-
     // Return the response along with the token (as a cookie)
     return redirect("/", {
       headers: {
-        "Set-Cookie": sessionCookie,
+        "Set-Cookie": await commitSession(session),
       },
     });
   } catch (error) {
