@@ -21,9 +21,7 @@ const Navbar: React.FC<NavbarProps> = () => {
         {/* Right Section: Login/Sign Up or Profile */}
         <div>
           <Button variant="outline" className="ml-4" asChild>
-            <a href="https://github.com/lucadibello/RoadSense">
-              See on GitHub 🚀
-            </a>
+            <a href="/logout">Logout 👋</a>
           </Button>
         </div>
       </div>
