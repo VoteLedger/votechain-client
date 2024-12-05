@@ -21,5 +21,8 @@ export const fetcher = async <T extends BaseApiResponse>(
   // If error, raise it, otherwise return the parsed response
   parsed.error && new Error(parsed.error);
   res.ok || new Error("Request failed");
-  return parsed;
+  return {
+    response: parsed,
+    statusCode: res.status,
+  };
 };

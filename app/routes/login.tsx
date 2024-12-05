@@ -6,6 +6,7 @@ import { signIn } from "~/services/auth";
 import { useAuth } from "~/providers/authprovider";
 import { useEffect, useState } from "react";
 import { UserSession } from "~/types/auth";
+import { ErrorWithStatus } from "~/lib/api";
 
 type SuccessActionResult = {
   error?: never;
@@ -61,12 +62,11 @@ export async function action({ request }: ActionFunctionArgs) {
 
   try {
     const tokenPair = await signIn(message, signature, account);
-    console.log("Token Pair:", tokenPair);
     const body = {
       refreshToken: tokenPair.refresh_token,
     } satisfies ActionResult;
 
-    // Return the response along with the token
+    // Return the response along with the token (as a cookie)
     return Response.json(body, {
       status: 200,
       headers: {
@@ -74,10 +74,22 @@ export async function action({ request }: ActionFunctionArgs) {
       },
     });
   } catch (error) {
-    console.error(error);
+    // generic error message
     let msg = "An error occurred while signing in";
-    if (error instanceof Error) {
-      msg = "An error occurred while signing in: " + error.message;
+    // check whether the error is wrapped (more precise error)
+    if (error instanceof ErrorWithStatus) {
+      if (error.statusCode === 401) {
+        msg = "You have to offer a valid signature";
+      } else if (error.statusCode === 500) {
+        msg = "An error occurred while signing in";
+      }
+    } else {
+      // generic error message
+      msg = "An error occurred while signing in";
+      if (error instanceof Error) {
+        // more comprehensive error if it's an instance of Error
+        msg = "An error occurred while signing in: " + error.message;
+      }
     }
 
     // return the error message
@@ -100,8 +112,8 @@ export default function LoginPage() {
   useEffect(() => {
     // validate data to prevent null errors
     if (!data) return;
-    else if (data.error || !data.refreshToken) return;
-    if (!userSession) return;
+    if (data.error) setUserSession(null);
+    if (!userSession || !data.refreshToken) return;
 
     // save user session in localstorage
     saveLogIn(userSession, data.refreshToken);
@@ -128,8 +140,6 @@ export default function LoginPage() {
             className="w-full bg-blue-500 text-white py-2 rounded"
             text="Login with MetaMask"
             onSuccess={(msg, sign, acc, chain_id) => {
-              console.log("Signature:", sign);
-
               // Send form data to the server
               const formData = new FormData();
               formData.append("message", msg);
@@ -137,7 +147,7 @@ export default function LoginPage() {
               formData.append("account", acc);
               submit(formData, { method: "POST" });
 
-              // set the
+              // set the user session in the state
               setUserSession({ account_address: acc, chain_id });
             }}
           />

@@ -15,3 +15,9 @@ export const ApiEndpointUrl: ApiEndpoints = {
   submitVote: () => `${_API_URL}/votes`,
   signIn: () => `${_API_URL}/auth/signin`,
 };
+
+export class ErrorWithStatus extends Error {
+  constructor(message: string, public statusCode: number) {
+    super(message);
+  }
+}
