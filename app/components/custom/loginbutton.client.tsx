@@ -5,7 +5,7 @@ import { generateMessage } from "~/lib/metamask";
 
 export interface LoginButtonProps extends Omit<ButtonProps, "onClick"> {
   text: string;
-  onSuccess?: (msg: string, nonce: number, signature: string) => void;
+  onSuccess?: (msg: string, signature: string, account: string) => void;
   onFail?: (error: Error) => void;
 }
 
@@ -17,7 +17,6 @@ export const LoginButton: React.FC<LoginButtonProps> = ({
 }: LoginButtonProps) => {
   const { sdk } = useSDK();
   const [loading, setLoading] = useState(false);
-  const [signature, setSignature] = useState("");
 
   if (!sdk)
     return (
@@ -25,6 +24,15 @@ export const LoginButton: React.FC<LoginButtonProps> = ({
         {text}
       </Button>
     );
+
+  const provider = sdk.getProvider();
+  if (!provider) {
+    return (
+      <Button {...props} disabled>
+        {text}
+      </Button>
+    );
+  }
 
   const connect = async (e: React.FormEvent<HTMLButtonElement>) => {
     // block the submit event
@@ -34,21 +42,20 @@ export const LoginButton: React.FC<LoginButtonProps> = ({
     // connect and sign the message
     try {
       // Generate a random message to sign
-      const { message, nonce } = generateMessage();
+      const message = generateMessage();
+
+      // recover accounts
+      const address = provider.getSelectedAddress();
+      if (!address) {
+        throw new Error("No account selected");
+      }
 
       const signature = await sdk.connectAndSign({
         msg: message,
       });
 
       console.log("Sign result:", signature);
-      console.log("Form:", e.target);
-      onSuccess && onSuccess(message, nonce, signature);
-
-      // get parent element of the button
-      e.currentTarget.parentElement?.querySelector("form")?.submit();
-
-      // lookup parent in the DOM + find the input field
-      setSignature(signature);
+      onSuccess && onSuccess(message, signature, address);
     } catch (err) {
       if (err instanceof Error) {
         onFail && onFail(err);
@@ -67,7 +74,6 @@ export const LoginButton: React.FC<LoginButtonProps> = ({
       {...props}
       onClick={(e) => connect(e)}
       disabled={loading}
-      value={signature}
     >
       {loading ? "Connecting..." : text}
     </Button>

@@ -25,8 +25,9 @@ export interface ApiResult<T> extends BaseApiResponse {
 export type PollApiResponse = ApiResult<Poll[]>;
 
 // Sign in response after logging in
-type SignInSuccess = ApiResult<{ token: string; refreshToken: string }> & {
+type SignInSuccess = ApiResult<{ token: string; refresh_token: string }> & {
   error?: never;
 };
 type SignInError = ApiResult<never> & { error: string };
+
 export type SignInApiResponse = SignInSuccess | SignInError;
