@@ -1,4 +1,4 @@
-import { createCookieSessionStorage } from "@remix-run/node";
+import { createCookieSessionStorage, Session } from "@remix-run/node";
 import { UserSession } from "~/types/auth";
 
 type SessionFlashData = {
@@ -32,4 +32,12 @@ const { getSession, commitSession, destroySession } =
     },
   });
 
-export { getSession, commitSession, destroySession };
+const isSession = (session: Session<UserSession, SessionFlashData>) => {
+  return (
+    session.data.account_address !== undefined &&
+    session.data.refresh_token !== undefined &&
+    session.data.access_token !== undefined
+  );
+};
+
+export { getSession, commitSession, destroySession, isSession };

@@ -1,14 +1,13 @@
-import type { MetaFunction } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
+import type { LoaderFunction, MetaFunction } from "@remix-run/node";
+import { redirect, useLoaderData } from "@remix-run/react";
 import { VStack, HStack } from "~/components/util/stack";
-import { getSession } from "~/lib/session";
 import { getPolls } from "~/services/polls";
-import { Poll } from "~/types/services";
+import { getSession, isSession } from "~/lib/session";
 
-type LoaderData = {
-  polls: Poll[];
-  error?: string;
-};
+// type LoaderData = {
+//   polls: Poll[];
+//   error?: string;
+// };
 
 export const meta: MetaFunction = () => {
   return [
@@ -20,10 +19,13 @@ export const meta: MetaFunction = () => {
   ];
 };
 
-export const loader = async (): Promise<LoaderData> => {
+export const loader: LoaderFunction = async ({ request }) => {
   // First of all, fetch the session
-  const session = await getSession();
+  const session = await getSession(request.headers.get("Cookie"));
   console.log("[Index] Session: ", session.data);
+  if (!isSession(session)) {
+    return redirect("/login");
+  }
 
   // Fetch polls from database
   try {
@@ -70,12 +72,12 @@ export default function Index() {
 
       {/* Display the polls */}
       <VStack spacing="16px" align="center">
-        {data.polls.map((poll) => (
-          <div key={poll.id} className="p-4 bg-gray-200">
-            <h2 className="text-xl font-bold">{poll.title}</h2>
-            <p>{poll.description}</p>
-          </div>
-        ))}
+        {/* {data.polls.map((poll) => ( */}
+        {/*   <div key={poll.id} className="p-4 bg-gray-200"> */}
+        {/*     <h2 className="text-xl font-bold">{poll.title}</h2> */}
+        {/*     <p>{poll.description}</p> */}
+        {/*   </div> */}
+        {/* ))} */}
       </VStack>
 
       <VStack spacing="16px" align="center">

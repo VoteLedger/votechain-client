@@ -5,7 +5,7 @@ import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { signIn } from "~/services/auth";
 import { ErrorWithStatus } from "~/lib/api";
 
-import { getSession, commitSession } from "~/lib/session";
+import { getSession, commitSession, isSession } from "~/lib/session";
 
 type LoaderData = {
   error?: string;
@@ -54,11 +54,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const session = await getSession(request.headers.get("Cookie"));
 
   // If the user is already authenticated, redirect to the home page
-  if (
-    session.has("access_token") &&
-    session.has("account_address") &&
-    session.has("refresh_token")
-  ) {
+  if (isSession(session)) {
     return redirect("/");
   }
 
