@@ -31,3 +31,8 @@ type SignInSuccess = ApiResult<{ token: string; refresh_token: string }> & {
 type SignInError = ApiResult<never> & { error: string };
 
 export type SignInApiResponse = SignInSuccess | SignInError;
+
+// Refresh token response
+type RefreshSuccess = ApiResult<{ token: string }> & { error?: never };
+type RefreshError = ApiResult<never> & { error: string };
+export type RefreshApiResponse = RefreshSuccess | RefreshError;
