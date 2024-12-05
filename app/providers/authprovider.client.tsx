@@ -5,13 +5,8 @@ import { UserSession } from "~/types/auth";
 interface AuthContextData {
   isAuthenticated: boolean;
   currentUser: UserSession | null;
-  accessToken: string | null;
   refreshToken: string | null;
-  saveLogIn: (
-    userSession: UserSession,
-    accessToken: string,
-    refreshToken: string
-  ) => void;
+  saveLogIn: (userSession: UserSession, refreshToken: string) => void;
   logOut: () => void;
   refreshSession: () => Promise<void>;
 }
@@ -23,7 +18,6 @@ interface AuthProviderProps {
 const AuthContext = createContext<AuthContextData>({
   isAuthenticated: false,
   currentUser: null,
-  accessToken: null,
   refreshToken: null,
   logOut: () => {},
   saveLogIn: () => {},
@@ -38,7 +32,6 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
 
   // Watch currentUser
   useEffect(() => {
-    console.log("current user changed");
     if (!currentUser) {
       // try to get user from local storage
       const user = localStorage.getItem("currentUser");
@@ -47,11 +40,11 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
         setIsAuthenticated(true);
       }
     }
+    console.log("current user", currentUser);
   }, [currentUser]);
 
   // Watch access token
   useEffect(() => {
-    console.log("access token changed");
     if (!accessToken) {
       // Read access token from cookies
       const cookies = document.cookie.split(";");
@@ -61,11 +54,11 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
         setAccessToken(token);
       }
     }
+    console.log("access token", accessToken);
   }, [accessToken]);
 
   // Watch refresh token
   useEffect(() => {
-    console.log("refresh token changed");
     if (!refreshToken) {
       // try to get refresh token from local storage
       const token = localStorage.getItem("refreshToken");
@@ -74,21 +67,20 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
         setRefreshToken(token);
       }
     }
+    console.log("refresh token", refreshToken);
   }, [refreshToken]);
 
   // Log in function
-  const saveLogIn = (
-    currentUser: UserSession,
-    accessToken: string,
-    refreshToken: string
-  ) => {
-    // Set access token in cookies
-    setAccessToken(accessToken);
-    setRefreshToken(refreshToken);
-    setIsAuthenticated(true);
+  const saveLogIn = (currentUser: UserSession, refreshToken: string) => {
+    // Save refresh token in local storage
+    localStorage.setItem("refreshToken", refreshToken);
 
     // save user to local storage
     localStorage.setItem("currentUser", JSON.stringify(currentUser));
+
+    // Save data into provider state
+    setRefreshToken(refreshToken);
+    setIsAuthenticated(true);
   };
 
   const logOut = () => {
@@ -156,7 +148,6 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
         logOut,
         refreshSession,
         refreshToken,
-        accessToken,
       }}
     >
       {children}

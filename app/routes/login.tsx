@@ -3,17 +3,17 @@ import { LoginButton } from "~/components/custom/loginbutton.client";
 import { Form, useActionData, useSubmit } from "@remix-run/react";
 import { ActionFunctionArgs } from "@remix-run/node";
 import { signIn } from "~/services/auth";
-import { useToast } from "~/hooks/use-toast";
+import { useAuth } from "~/providers/authprovider.client";
+import { useEffect, useState } from "react";
+import { UserSession } from "~/types/auth";
 
 type SuccessActionResult = {
-  token: string;
-  refreshToken: string;
   error?: never;
+  refreshToken: string;
 };
 
 type ErrorActionResult = {
   error: string;
-  token?: never;
   refreshToken?: never;
 };
 
@@ -54,10 +54,16 @@ export async function action({ request }: ActionFunctionArgs) {
     const tokenPair = await signIn(message, signature, account);
     console.log("Token Pair:", tokenPair);
     const body = {
-      token: tokenPair.token,
       refreshToken: tokenPair.refresh_token,
     } satisfies ActionResult;
-    return Response.json(body, { status: 200 });
+
+    // Return the response along with the token
+    return Response.json(body, {
+      status: 200,
+      headers: {
+        "Set-Cookie": `token=${tokenPair.token}; Path=/; HttpOnly; SameSite=Strict;`,
+      },
+    });
   } catch (error) {
     console.error(error);
     let msg = "An error occurred while signing in";
@@ -76,7 +82,21 @@ export default function LoginPage() {
   const submit = useSubmit();
   const data = useActionData<ActionResult>();
 
-  console.log("Data:", data);
+  const [userSession, setUserSession] = useState<UserSession | null>(null);
+
+  // Load authentication provider
+  const { saveLogIn } = useAuth();
+
+  // When the user session is ok + the login response is ok
+  useEffect(() => {
+    // validate data to prevent null errors
+    if (!data) return;
+    else if (data.error || !data.refreshToken) return;
+    if (!userSession) return;
+
+    // save user session in localstorage
+    saveLogIn(userSession, data.refreshToken);
+  }, [userSession, data, saveLogIn]);
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
@@ -98,7 +118,7 @@ export default function LoginPage() {
             name="signature"
             className="w-full bg-blue-500 text-white py-2 rounded"
             text="Login with MetaMask"
-            onSuccess={(msg, sign, acc) => {
+            onSuccess={(msg, sign, acc, chain_id) => {
               console.log("Signature:", sign);
 
               // Send form data to the server
@@ -107,6 +127,9 @@ export default function LoginPage() {
               formData.append("signature", sign);
               formData.append("account", acc);
               submit(formData, { method: "POST" });
+
+              // set the
+              setUserSession({ account_address: acc, chain_id });
             }}
           />
         </Form>

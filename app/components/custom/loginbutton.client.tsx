@@ -5,7 +5,12 @@ import { generateMessage } from "~/lib/metamask";
 
 export interface LoginButtonProps extends Omit<ButtonProps, "onClick"> {
   text: string;
-  onSuccess?: (msg: string, signature: string, account: string) => void;
+  onSuccess?: (
+    msg: string,
+    signature: string,
+    account: string,
+    chain_id: string
+  ) => void;
   onFail?: (error: Error) => void;
 }
 
@@ -50,12 +55,14 @@ export const LoginButton: React.FC<LoginButtonProps> = ({
         throw new Error("No account selected");
       }
 
+      const chain_id = provider.getChainId();
+
       const signature = await sdk.connectAndSign({
         msg: message,
       });
 
       console.log("Sign result:", signature);
-      onSuccess && onSuccess(message, signature, address);
+      onSuccess && onSuccess(message, signature, address, chain_id);
     } catch (err) {
       if (err instanceof Error) {
         onFail && onFail(err);
