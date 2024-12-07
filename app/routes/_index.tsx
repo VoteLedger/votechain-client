@@ -22,7 +22,7 @@ export const meta: MetaFunction = () => {
 export const loader: LoaderFunction = async ({ request }) => {
   // First of all, fetch the session
   const session = await getSession(request.headers.get("Cookie"));
-  console.log("[Index] Session: ", session.data);
+
   if (!isSession(session)) {
     return redirect("/login");
   }

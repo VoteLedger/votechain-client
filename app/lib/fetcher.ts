@@ -17,7 +17,6 @@ export const fetcher = async <T extends BaseApiResponse>(
 
   // Compute endpoint URL and send request
   const res = await fetch(endpoint(), options);
-  console.log("Response status:", res.status);
 
   // Reject errors
   if (!res.ok) {
