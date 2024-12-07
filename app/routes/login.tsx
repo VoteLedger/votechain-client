@@ -6,6 +6,7 @@ import { signIn } from "~/services/auth";
 import { ErrorWithStatus } from "~/lib/api";
 
 import { getSession, commitSession, isSession } from "~/lib/session";
+import { getErrorMessageForStatusCode } from "~/lib/error";
 
 type LoaderData = {
   error?: string;
@@ -77,12 +78,12 @@ export async function action({ request }: ActionFunctionArgs) {
     });
   }
 
-  // extract form data
+  // Extract form data
   const body = await request.formData();
 
   // Check if all fields are present
   const fields = ["signature", "message", "account"];
-  const missingFields = [];
+  const missingFields: string[] = [];
   for (const field of fields) {
     if (!body.has(field)) {
       missingFields.push(field);
@@ -106,7 +107,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const session = await getSession(request.headers.get("Cookie"));
 
-  // send request to the server and sign in / authenticate
+  // Extract values
   const signature = body.get("signature") as string;
   const message = body.get("message") as string;
   const account = body.get("account") as string;
@@ -126,28 +127,21 @@ export async function action({ request }: ActionFunctionArgs) {
       },
     });
   } catch (error) {
-    // generic error message
     let msg = "An error occurred while signing in";
-    // check whether the error is wrapped (more precise error)
+
+    // Use the getErrorMessageForStatusCode to get a user-friendly message if we have a status code
     if (error instanceof ErrorWithStatus) {
-      if (error.statusCode === 401) {
-        msg = "You have to offer a valid signature";
-      } else if (error.statusCode === 500) {
-        msg = "An error occurred while signing in";
-      }
-    } else {
-      // generic error message
-      msg = "An error occurred while signing in";
-      if (error instanceof Error) {
-        // more comprehensive error if it's an instance of Error
-        msg = "An error occurred while signing in: " + error.message;
-      }
+      // Provide a resource name if it makes sense (in this case "Session")
+      msg = getErrorMessageForStatusCode(error.statusCode, "Session");
+    } else if (error instanceof Error) {
+      // If it's a regular Error, append the technical message for debugging
+      msg = `An error occurred while signing in: ${error.message}`;
     }
 
     // Save the error inside the session
     session.flash("error", msg);
 
-    // Redirect to the login page to show the error!
+    // Redirect to the login page to show the error
     return redirect("/login", {
       headers: {
         "Set-Cookie": await commitSession(session),

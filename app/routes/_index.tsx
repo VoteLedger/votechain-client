@@ -5,51 +5,12 @@ import { getPolls } from "~/services/polls";
 import { getSession, isSession } from "~/lib/session";
 import { Poll } from "~/types/services";
 import { Badge } from "~/components/ui/badge";
+import { ErrorWithStatus } from "~/lib/api";
+import { getErrorMessageForStatusCode } from "~/lib/error";
 
 type LoaderData = {
   polls: Poll[];
   error?: string;
-};
-
-export const meta: MetaFunction = () => {
-  return [
-    { title: "VoteChain" },
-    {
-      name: "description",
-      content: "VoteChain - A blockchain based voting system",
-    },
-  ];
-};
-
-export const loader: LoaderFunction = async ({ request }) => {
-  // First of all, fetch the session
-  const session = await getSession(request.headers.get("Cookie"));
-
-  if (!isSession(session)) {
-    return redirect("/login");
-  }
-
-  // Fetch polls from database
-  try {
-    const polls = await getPolls(session);
-
-    // return polls
-    return {
-      polls: polls || [],
-    };
-  } catch (error) {
-    //
-    console.warn(
-      "An error occurred while loading polls from API: ",
-      (error as Error).message
-    );
-
-    // return empty polls
-    return {
-      polls: [],
-      error: "Failed to fetch polls - " + error,
-    };
-  }
 };
 
 export default function Index() {
@@ -100,3 +61,57 @@ export default function Index() {
     </div>
   );
 }
+
+export const meta: MetaFunction = () => {
+  return [
+    { title: "VoteChain" },
+    {
+      name: "description",
+      content: "VoteChain - A blockchain based voting system",
+    },
+  ];
+};
+
+export const loader: LoaderFunction = async ({ request }) => {
+  // First of all, fetch the session
+  const session = await getSession(request.headers.get("Cookie"));
+
+  if (!isSession(session)) {
+    return redirect("/login");
+  }
+
+  // Fetch polls from database
+  try {
+    const polls = await getPolls(session);
+
+    // Return polls
+    return {
+      polls: polls || [],
+    };
+  } catch (error) {
+    console.warn(
+      "An error occurred while loading polls from API:",
+      (error as Error).message
+    );
+
+    let msg = "Failed to fetch polls";
+
+    console.log("Error:", error);
+
+    // If error with status, access status code
+    if (error instanceof ErrorWithStatus) {
+      if (error.statusCode === 401) {
+        return redirect("/login");
+      } else {
+        // Use our custom utility to get a user-friendly error message
+        msg = getErrorMessageForStatusCode(error.statusCode, "Poll");
+      }
+    }
+
+    // Return empty polls with an error message
+    return {
+      polls: [],
+      error: msg,
+    };
+  }
+};
