@@ -7,6 +7,7 @@ export interface ApiEndpoints {
   getPoll: Endpoint;
   submitVote: Endpoint;
   signIn: Endpoint;
+  refresh: Endpoint;
 }
 
 export interface BaseApiResponse {

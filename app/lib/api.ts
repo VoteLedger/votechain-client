@@ -14,6 +14,7 @@ export const ApiEndpointUrl: ApiEndpoints = {
   getPoll: (id: string) => `${_API_URL}/polls/${id}`,
   submitVote: () => `${_API_URL}/votes`,
   signIn: () => `${_API_URL}/auth/signin`,
+  refresh: () => `${_API_URL}/auth/refresh`,
 };
 
 export class ErrorWithStatus extends Error {

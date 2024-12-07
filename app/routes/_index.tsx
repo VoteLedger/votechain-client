@@ -96,12 +96,13 @@ export const loader: LoaderFunction = async ({ request }) => {
 
     let msg = "Failed to fetch polls";
 
-    console.log("Error:", error);
-
     // If error with status, access status code
     if (error instanceof ErrorWithStatus) {
       if (error.statusCode === 401) {
         return redirect("/login");
+      } else if (error.statusCode == 498) {
+        // If token expired, redirect to logout
+        return redirect("/logout");
       } else {
         // Use our custom utility to get a user-friendly error message
         msg = getErrorMessageForStatusCode(error.statusCode, "Poll");

@@ -1,36 +1,93 @@
 import { BaseApiResponse, Endpoint } from "~/types/api";
 import { VoteChainSession } from "./session";
-import { ErrorWithStatus } from "./api";
+import { ApiEndpointUrl, ErrorWithStatus } from "./api";
 
-// fetcher is a wrapper around fetch that adds the base URL and refresh the token if needed
 export const fetcher = async <T extends BaseApiResponse>(
   endpoint: Endpoint,
   options: RequestInit = {},
-  session?: VoteChainSession
-) => {
-  if (session) {
-    // Add the access token to the headers
+  session?: VoteChainSession,
+  retryOnRefresh: boolean = true,
+  onRefreshSuccessful?: (refreshToken: string) => void
+): Promise<{ response: T; statusCode: number }> => {
+  // Include access token in headers if present
+  if (session?.data.access_token) {
     options.headers = {
       ...options.headers,
       Authorization: `Bearer ${session.data.access_token}`,
     };
   }
 
-  // Compute endpoint URL and send request
   const res = await fetch(endpoint(), options);
 
-  // Reject errors
+  // If not ok, handle error
   if (!res.ok) {
+    // Handle special case: 498 = Token expired, need to refresh
+    if (res.status === 498 && session?.data.refresh_token && retryOnRefresh) {
+      try {
+        // Attempt to refresh the token
+        const newAccessToken = await refreshAccessToken(session);
+
+        // Call the onRefreshSuccessful callback if provided in order
+        // to let the route update the session accordingly
+        onRefreshSuccessful && onRefreshSuccessful(newAccessToken);
+
+        // Save the token in the session
+        session.set("access_token", newAccessToken);
+
+        // After refreshing, try again (only once)
+        return fetcher<T>(endpoint, options, session, false);
+      } catch (error) {
+        // If refresh failed, force user to log in again
+        console.warn("Failed to refresh token, redirecting to login");
+        throw new ErrorWithStatus("Token expired", res.status);
+      }
+    }
+
+    // For other errors, just throw
     throw new ErrorWithStatus("Request failed", res.status);
   }
 
-  // parse the body of the response
   const parsed = (await res.json()) as T;
 
-  // If error, raise it, otherwise return the parsed response
-  parsed.error && new ErrorWithStatus(parsed.error, res.status);
+  // If the API response includes an error field
+  if (parsed.error) {
+    throw new ErrorWithStatus(parsed.error, res.status);
+  }
+
   return {
     response: parsed,
     statusCode: res.status,
   };
 };
+
+// Helper function to refresh the access token
+async function refreshAccessToken(session: VoteChainSession): Promise<string> {
+  const refreshToken = session.data.refresh_token;
+  if (!refreshToken) {
+    return Promise.reject("No refresh token found in session");
+  }
+
+  // Call the auth/refresh endpoint
+  const res = await fetch(ApiEndpointUrl.refresh(), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ refresh_token: refreshToken }),
+  });
+
+  if (!res.ok) {
+    // If we cannot refresh, return false
+    throw new ErrorWithStatus("Failed to refresh token", res.status);
+  }
+
+  const data = await res.json();
+
+  // Expecting { data: { token: string } } structure from the endpoint
+  if (data?.data?.token) {
+    // Update the session with new access token
+    session.data.access_token = data.data.token;
+    return Promise.resolve(data.data.token);
+  }
+
+  // If the response is not as expected, reject
+  return Promise.reject("Invalid response from refresh endpoint");
+}
