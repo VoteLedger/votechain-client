@@ -5,7 +5,12 @@ import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { signIn } from "~/services/auth";
 import { ErrorWithStatus } from "~/lib/api";
 
-import { getSession, commitSession, isSession } from "~/lib/session";
+import {
+  getSession,
+  commitSession,
+  isSession,
+  destroySession,
+} from "~/lib/session";
 import { getErrorMessageForStatusCode } from "~/lib/error";
 
 type LoaderData = {
@@ -55,17 +60,25 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const session = await getSession(request.headers.get("Cookie"));
 
   // If the user is already authenticated, redirect to the home page
-  if (isSession(session)) {
-    return redirect("/");
+  const is_valid = isSession(session);
+  if (is_valid && !session.has("error")) {
+    return redirect("/"); // If no errors, and session exists, redirect to home page
   }
 
   // If not already authenticated, try to load errors (if any)
   const data = {
     error: session.get("error"),
   };
+
+  // If there are errors, destroy the session
+  await destroySession(session);
+
   return Response.json(data, {
     headers: {
-      "Set-Cookie": await commitSession(session),
+      "Set-Cookie":
+        is_valid && session.has("error")
+          ? await destroySession(session)
+          : await commitSession(session),
     },
   });
 }
@@ -132,7 +145,19 @@ export async function action({ request }: ActionFunctionArgs) {
     // Use the getErrorMessageForStatusCode to get a user-friendly message if we have a status code
     if (error instanceof ErrorWithStatus) {
       // Provide a resource name if it makes sense (in this case "Session")
-      msg = getErrorMessageForStatusCode(error.statusCode, "Session");
+      if (error.statusCode === 498) {
+        // If token expired, redirect to login page with the error message
+        session.flash("error", msg);
+
+        // redirect to login page
+        return redirect("/login", {
+          headers: {
+            "Set-Cookie": await commitSession(session),
+          },
+        });
+      } else {
+        msg = getErrorMessageForStatusCode(error.statusCode, "Session");
+      }
     } else if (error instanceof Error) {
       // If it's a regular Error, append the technical message for debugging
       msg = `An error occurred while signing in: ${error.message}`;

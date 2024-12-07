@@ -2,7 +2,7 @@ import type { LoaderFunction, MetaFunction } from "@remix-run/node";
 import { redirect, useLoaderData } from "@remix-run/react";
 import { VStack } from "~/components/util/stack";
 import { getPolls } from "~/services/polls";
-import { getSession, isSession } from "~/lib/session";
+import { commitSession, getSession, isSession } from "~/lib/session";
 import { Poll } from "~/types/services";
 import { Badge } from "~/components/ui/badge";
 import { ErrorWithStatus } from "~/lib/api";
@@ -101,8 +101,15 @@ export const loader: LoaderFunction = async ({ request }) => {
       if (error.statusCode === 401) {
         return redirect("/login");
       } else if (error.statusCode == 498) {
+        // Save the error inside the session
+        session.flash("error", msg);
+
         // If token expired, redirect to logout
-        return redirect("/logout");
+        return redirect("/login", {
+          headers: {
+            "Set-Cookie": await commitSession(session),
+          },
+        });
       } else {
         // Use our custom utility to get a user-friendly error message
         msg = getErrorMessageForStatusCode(error.statusCode, "Poll");
