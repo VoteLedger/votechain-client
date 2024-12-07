@@ -1,13 +1,15 @@
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
 import { redirect, useLoaderData } from "@remix-run/react";
-import { VStack, HStack } from "~/components/util/stack";
+import { VStack } from "~/components/util/stack";
 import { getPolls } from "~/services/polls";
 import { getSession, isSession } from "~/lib/session";
+import { Poll } from "~/types/services";
+import { Badge } from "~/components/ui/badge";
 
-// type LoaderData = {
-//   polls: Poll[];
-//   error?: string;
-// };
+type LoaderData = {
+  polls: Poll[];
+  error?: string;
+};
 
 export const meta: MetaFunction = () => {
   return [
@@ -33,7 +35,7 @@ export const loader: LoaderFunction = async ({ request }) => {
 
     // return polls
     return {
-      polls: polls,
+      polls: polls || [],
     };
   } catch (error) {
     //
@@ -52,19 +54,27 @@ export const loader: LoaderFunction = async ({ request }) => {
 
 export default function Index() {
   // retrieve the polls from the loader data
-  const data = useLoaderData<typeof loader>();
+  const data = useLoaderData<LoaderData>();
 
   console.log("[Index] Polls: ", data);
 
   return (
     <div className="container mx-auto mt-8">
       <h1 className="text-3xl font-bold">Current Polls</h1>
+
+      {/* Display number of loaded polls */}
+      {data.polls.length > 0 && (
+        <Badge className="mt-2">
+          {data.polls.length} poll{data.polls.length > 1 ? "s" : ""} available
+        </Badge>
+      )}
+
       {/* Divider */}
       <div className="border-b-2 border-gray-300 my-4"></div>
 
       {/* Display error message if any */}
       {data.error && (
-        <div className="p-4 bg-red-200">
+        <div className="p-4 bg-red-200 mx-4">
           <h2 className="text-xl font-bold">Error</h2>
           <p>{data.error}</p>
         </div>
@@ -72,24 +82,21 @@ export default function Index() {
 
       {/* Display the polls */}
       <VStack spacing="16px" align="center">
-        {/* {data.polls.map((poll) => ( */}
-        {/*   <div key={poll.id} className="p-4 bg-gray-200"> */}
-        {/*     <h2 className="text-xl font-bold">{poll.title}</h2> */}
-        {/*     <p>{poll.description}</p> */}
-        {/*   </div> */}
-        {/* ))} */}
+        {data.polls.map((poll) => (
+          <div key={poll.id} className="p-4 bg-gray-200">
+            <h2 className="text-xl font-bold">{poll.title}</h2>
+            <p>{poll.description}</p>
+          </div>
+        ))}
       </VStack>
 
-      <VStack spacing="16px" align="center">
-        <div className="p-6 bg-gray-200">Item 1</div>
-        <div className="p-4 bg-gray-300">Item 2</div>
-        <div className="p-4 bg-gray-400">Item 3</div>
-      </VStack>
-      <HStack spacing="16px" justify="center">
-        <div className="p-4 bg-blue-200">Item A</div>
-        <div className="p-4 bg-blue-300">Item B</div>
-        <div className="p-4 bg-blue-400">Item C</div>
-      </HStack>
+      {/* Display a message if no polls are available */}
+      {data.polls.length === 0 && !data.error && (
+        <div className="p-4 bg-yellow-200 mx-4">
+          <h2 className="text-xl font-bold">No Polls</h2>
+          <p>There are no polls available at the moment.</p>
+        </div>
+      )}
     </div>
   );
 }
