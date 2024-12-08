@@ -84,10 +84,18 @@ export const loader: LoaderFunction = async ({ request }) => {
   try {
     const polls = await getPolls(session);
 
-    // Return polls
-    return {
-      polls: polls || [],
-    };
+    // Return the response
+    return Response.json(
+      {
+        polls: polls || [],
+      },
+      {
+        // If the session has been modified, update the cookie
+        headers: {
+          "Set-Cookie": await commitSession(session),
+        },
+      }
+    );
   } catch (error) {
     console.warn(
       "An error occurred while loading polls from API:",
@@ -117,9 +125,17 @@ export const loader: LoaderFunction = async ({ request }) => {
     }
 
     // Return empty polls with an error message
-    return {
-      polls: [],
-      error: msg,
-    };
+    return Response.json(
+      {
+        polls: [],
+        error: msg,
+      },
+      {
+        // If the session has been modified, update the cookie
+        headers: {
+          "Set-Cookie": await commitSession(session),
+        },
+      }
+    );
   }
 };
