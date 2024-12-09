@@ -187,7 +187,10 @@ export const action: ActionFunction = async ({ request }) => {
 
   // **13. Create Poll in Database**
   try {
-    await createPoll(session, poll);
+    const poll_id = await createPoll(session, poll);
+    console.log("Poll created successfully with ID:", poll_id);
+    // redirect to the poll page
+    return redirect("/polls/" + poll_id);
   } catch (error) {
     if (error instanceof ErrorWithStatus) {
       console.warn("An error occurred while creating a poll:", error.message);

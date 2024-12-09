@@ -1,4 +1,8 @@
-import { BaseApiResponse, PollApiResponse } from "~/types/api";
+import {
+  BaseApiResponse,
+  CreatePollApiResponse,
+  PollApiResponse,
+} from "~/types/api";
 import { ApiEndpointUrl, ErrorWithStatus } from "~/lib/api";
 import { fetcher } from "~/lib/fetcher";
 import { CreatePoll, Poll } from "~/types/services";
@@ -23,10 +27,10 @@ export async function getPolls(session: VoteChainSession): Promise<Poll[]> {
 export async function createPoll(
   session: VoteChainSession,
   poll: CreatePoll
-): Promise<void> {
+): Promise<number> {
   // Create a new poll
   console.log("Creating a new poll:", poll);
-  const { response, statusCode } = await fetcher<BaseApiResponse>(
+  const { response, statusCode } = await fetcher<CreatePollApiResponse>(
     ApiEndpointUrl.createPoll,
     {
       method: "POST",
@@ -39,6 +43,6 @@ export async function createPoll(
   if (response.error) {
     throw new ErrorWithStatus(response.error, statusCode);
   } else {
-    return Promise.resolve();
+    return Promise.resolve(response.poll_id);
   }
 }

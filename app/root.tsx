@@ -29,6 +29,7 @@ export const links: LinksFunction = () => [
 ];
 
 export const loader: LoaderFunction = async ({ request }) => {
+  // Check if we have an error
   // extract the session cookie from the request headers
   const session = await getSession(request.headers.get("Cookie"));
   return Response.json({ isAuthenticated: isSession(session) });

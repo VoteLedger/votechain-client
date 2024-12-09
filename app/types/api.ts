@@ -38,3 +38,8 @@ export type SignInApiResponse = SignInSuccess | SignInError;
 type RefreshSuccess = ApiResult<{ token: string }> & { error?: never };
 type RefreshError = ApiResult<never> & { error: string };
 export type RefreshApiResponse = RefreshSuccess | RefreshError;
+
+// Create poll response
+type CreatePollSuccess = ApiResult<{ poll_id: number }> & { error?: never };
+type CreatePollError = ApiResult<never> & { error: string };
+export type CreatePollApiResponse = CreatePollSuccess | CreatePollError;
