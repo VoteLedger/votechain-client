@@ -5,6 +5,7 @@ export type Endpoint = (...args: string[]) => string;
 export interface ApiEndpoints {
   getPolls: Endpoint;
   getPoll: Endpoint;
+  createPoll: Endpoint;
   submitVote: Endpoint;
   signIn: Endpoint;
   refresh: Endpoint;

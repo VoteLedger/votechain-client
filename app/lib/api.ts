@@ -12,6 +12,7 @@ if (!process.env.REMIX_APP_URL) {
 export const ApiEndpointUrl: ApiEndpoints = {
   getPolls: () => `${_API_URL}/polls`,
   getPoll: (id: string) => `${_API_URL}/polls/${id}`,
+  createPoll: () => `${_API_URL}/polls`,
   submitVote: () => `${_API_URL}/votes`,
   signIn: () => `${_API_URL}/auth/signin`,
   refresh: () => `${_API_URL}/auth/refresh`,

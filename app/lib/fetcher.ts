@@ -12,6 +12,7 @@ export const fetcher = async <T extends BaseApiResponse>(
   // Include access token in headers if present
   if (session?.data.access_token) {
     options.headers = {
+      "Content-Type": "application/json",
       ...options.headers,
       Authorization: `Bearer ${session.data.access_token}`,
     };
@@ -41,10 +42,18 @@ export const fetcher = async <T extends BaseApiResponse>(
         console.warn("Failed to refresh token, redirecting to login");
         throw new ErrorWithStatus("Token expired", res.status);
       }
-    }
+    } else {
+      // read body if present
+      const body = await res.text();
 
-    // For other errors, just throw
-    throw new ErrorWithStatus("Request failed", res.status);
+      if (body) {
+        throw new ErrorWithStatus(body, res.status);
+      } else if (res.statusText) {
+        throw new ErrorWithStatus(res.statusText, res.status);
+      } else {
+        throw new ErrorWithStatus("Unknown error", res.status);
+      }
+    }
   }
 
   const parsed = (await res.json()) as T;
