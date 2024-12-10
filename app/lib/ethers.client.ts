@@ -12,7 +12,7 @@ const getContract = async (provider: BrowserProvider) => {
     "function poll_count() public view returns (uint)",
 
     // Access poll mappings!
-    "function polls(uint256) view returns (uint256 id, string name, string description, uint256 start_time, uint256 end_time, string winner, bool is_ended, address owner)",
+    "function polls(uint256) view returns (uint256 id, string name, string description, uint256 created_at, uint256 start_time, uint256 end_time, string winner, bool is_ended, address owner)",
     "function polls(uint256, address) view returns (bool)",
     "function polls(uint256, string) view returns (uint256)",
   ];
@@ -23,7 +23,7 @@ const getContract = async (provider: BrowserProvider) => {
 
   // create the contract instance
   const contract = new Contract(
-    "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+    "0x7ef8E99980Da5bcEDcF7C10f41E55f759F6A174B",
     iface,
     signer
   );

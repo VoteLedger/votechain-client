@@ -21,7 +21,7 @@ export function PollList({ provider }: PollListProps) {
   }
 
   if (error || !polls) {
-    return <div>Error loading polls</div>;
+    return <div>Error loading polls: {JSON.stringify(error)}</div>;
   }
 
   return (
@@ -34,19 +34,21 @@ export function PollList({ provider }: PollListProps) {
         </div>
       )}
 
-      {/* Display each poll's details */}
-      {polls.map((poll, idx) => (
-        <PollCard
-          key={idx}
-          poll={poll}
-          onVote={() => {
-            console.log("Vote");
-          }}
-          onViewDetails={() => {
-            console.log("View details");
-          }}
-        />
-      ))}
+      {/* Display each open poll's details */}
+      {polls
+        .filter((p) => !p.is_ended)
+        .map((poll, idx) => (
+          <PollCard
+            key={idx}
+            poll={poll}
+            onVote={() => {
+              console.log("Vote");
+            }}
+            onViewDetails={() => {
+              console.log("View details");
+            }}
+          />
+        ))}
     </div>
   );
 }

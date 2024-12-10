@@ -36,7 +36,7 @@ export default function Index() {
           <h1 className="text-3xl font-bold">Current Polls</h1>
 
           {/* Badge to show the total number of polls */}
-          {data && <Badge>{data}</Badge>}
+          {!!data && <Badge>{data}</Badge>}
           {isLoading || (isValidating && <LoadingSpinner />)}
           {error && (
             <p className="text-red-500">
