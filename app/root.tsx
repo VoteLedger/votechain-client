@@ -12,6 +12,8 @@ import tailwind_style from "./tailwind.css?url";
 import { Navbar } from "./components/ui/navbar";
 import { Providers } from "./providers";
 import { getSession, isSession } from "./lib/session";
+import { Toaster } from "./components/ui/toaster";
+import { ClientOnly } from "remix-utils/client-only";
 
 export const links: LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -32,12 +34,14 @@ export const loader: LoaderFunction = async ({ request }) => {
   // Check if we have an error
   // extract the session cookie from the request headers
   const session = await getSession(request.headers.get("Cookie"));
+
   return Response.json({ isAuthenticated: isSession(session) });
 };
 
 export function Layout({ children }: { children: React.ReactNode }) {
   // retrieve the session data from the loader
   const data = useLoaderData<{ isAuthenticated: boolean }>();
+  console.log(data);
 
   // return the layout
   return (
@@ -49,10 +53,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
-        <Navbar isAuthenticated={data.isAuthenticated} />
+        <Navbar isAuthenticated={(data && data.isAuthenticated) || false} />
         <main>{children}</main>
         <ScrollRestoration />
         <Scripts />
+        <ClientOnly>{() => <Toaster />}</ClientOnly>
       </body>
     </html>
   );

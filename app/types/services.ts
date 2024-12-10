@@ -12,8 +12,8 @@ export type Poll = {
   image?: string;
   options: PollOption[];
   // Start end dates
-  start_time: number;
-  end_time: number;
+  start_time: Date;
+  end_time: Date;
 };
 
 export type CreatePoll = Omit<Poll, "options" | "id"> & {

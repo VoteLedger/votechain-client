@@ -1,11 +1,7 @@
-import { ActionFunctionArgs, redirect } from "@remix-run/node";
+import { redirect } from "@remix-run/node";
 import { destroySession, getSession } from "~/lib/session";
 
-export async function action({ request }: ActionFunctionArgs) {
-  if (request.method !== "POST") {
-    return new Response("Method Not Allowed", { status: 405 });
-  }
-
+export async function loader({ request }: { request: Request }) {
   const session = await getSession(request.headers.get("Cookie"));
 
   return redirect("/login", {
@@ -13,4 +9,13 @@ export async function action({ request }: ActionFunctionArgs) {
       "Set-Cookie": await destroySession(session),
     },
   });
+}
+
+export default function Logout() {
+  return (
+    <div style={{ textAlign: "center", marginTop: "2rem" }}>
+      <h1>Logging out...</h1>
+      <p>You are being redirected to the login page.</p>
+    </div>
+  );
 }

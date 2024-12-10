@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Form } from "@remix-run/react"; // Import Form from Remix
 import { Button } from "~/components/ui/button";
 import {
   Dialog,
@@ -13,6 +12,10 @@ import {
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea"; // Assuming you have a Textarea component
+import { validateCreatePoll } from "~/lib/validator";
+import { useEthContext } from "~/providers/ethcontextprovider.client";
+import { createPoll, PollRecipt } from "~/services/polls.client";
+import { CreatePoll } from "~/types/services";
 
 export type PollFormFields = [
   "name",
@@ -23,18 +26,31 @@ export type PollFormFields = [
   "server"
 ];
 
+type FormErrors = {
+  [key in PollFormFields[number]]?: string;
+};
+
 export interface CreatePollDialogProps {
-  errors?: {
-    [key in PollFormFields[number]]?: string;
-  };
+  onSubmit?: () => void;
+  onPollCreated?: (poll: PollRecipt) => void;
+  onError?: (error: string) => void;
 }
 
 export const CreatePollDialog: React.FC<CreatePollDialogProps> = ({
-  errors = {},
+  onPollCreated,
+  onError,
 }: CreatePollDialogProps) => {
   // const transition = useTransition();
-
   const [options, setOptions] = useState<string[]>(["", ""]);
+  const [errors, setErrors] = useState<FormErrors>({});
+
+  // Load provider from context
+  const { provider } = useEthContext();
+
+  // Ensure that the provider is available
+  if (!provider) {
+    return null;
+  }
 
   const handleOptionChange = (index: number, value: string) => {
     const newOptions = [...options];
@@ -53,6 +69,71 @@ export const CreatePollDialog: React.FC<CreatePollDialogProps> = ({
   // Get current time in ISO format for default start time
   const currentTime = new Date().toISOString().slice(0, 16); // 'YYYY-MM-DDTHH:MM'
 
+  const sanitizePoll = (poll: CreatePoll) => {
+    const sanitizedOptions = Array.from(
+      new Set(poll.options.map((opt) => opt.trim()).filter((opt) => opt !== ""))
+    ); // Remove duplicates and sanitize
+    const sanitizedName = poll.name!.trim();
+    const sanitizedDescription = poll.description!.trim();
+
+    // Return sanitized poll
+    return {
+      ...poll,
+      name: sanitizedName,
+      description: sanitizedDescription,
+      options: sanitizedOptions,
+    };
+  };
+
+  const handleSumbit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    // remove all errors
+    setErrors({});
+
+    // Extract data from form
+    const name = (e.target as any).name.value as string;
+    const description = (e.target as any).description.value as string;
+    const startTime = new Date((e.target as any).startTime.value as string);
+    const endTime = new Date((e.target as any).endTime.value as string);
+
+    // extract array of options
+    const options = Array.from((e.target as any)["options[]"]).map(
+      (option: any) => option.value
+    );
+
+    // create poll object
+    const poll = {
+      name,
+      description,
+      options,
+      start_time: startTime,
+      end_time: endTime,
+    } satisfies CreatePoll;
+
+    // sanitize poll
+    const sanitizedPoll = sanitizePoll(poll);
+
+    // validate poll
+    const val_errors = validateCreatePoll(sanitizedPoll);
+    if (val_errors) {
+      setErrors(val_errors);
+      return;
+    }
+    // if all is valid, create the poll
+    const recipt = await createPoll(provider, poll);
+
+    // call the onPollCreated callback
+    if (recipt) {
+      console.log("Poll created: ", recipt);
+      onPollCreated && onPollCreated(recipt);
+    } else {
+      onError && onError("Failed to create poll.");
+      // if the poll was not created, show an error
+      setErrors({ server: "Failed to create poll." });
+    }
+  };
+
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -69,7 +150,7 @@ export const CreatePollDialog: React.FC<CreatePollDialogProps> = ({
         {errors.server && (
           <div className="col-span-4 text-red-600">{errors.server}</div>
         )}
-        <Form method="post" className="grid gap-4 py-4">
+        <form className="grid gap-4 py-4" onSubmit={handleSumbit}>
           {/* Poll Name */}
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="name" className="text-right">
@@ -208,7 +289,7 @@ export const CreatePollDialog: React.FC<CreatePollDialogProps> = ({
           <DialogFooter>
             <Button type="submit">Create Poll</Button>
           </DialogFooter>
-        </Form>
+        </form>
       </DialogContent>
     </Dialog>
   );
