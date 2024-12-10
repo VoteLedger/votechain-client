@@ -6,9 +6,11 @@ const getContract = async (provider: BrowserProvider) => {
   // define the abi
   const abi = [
     "function create_poll(string _name, string _description, string[] _options, uint _start_time, uint _end_time) public returns (uint)",
+
     "function end_poll(uint poll_id) public",
-    "function cast_vote(uint poll_id, uint option_index) public",
     "function finalize_poll(uint poll_id) public",
+
+    "function cast_vote(uint poll_id, uint option_index) public",
     "function get_winner(uint poll_id) public view returns (string)",
     "function get_votes(uint poll_id, string option) public view returns (uint)",
     "function poll_count() public view returns (uint)",

@@ -46,15 +46,16 @@ export default function Index() {
     closedPolls: [],
   };
 
-  console.log("Polls: ", polls);
-  console.log(currentAccount);
-
   // Categorize the polls using reduce with explicit typing
   const { myPolls, availablePolls, closedPolls }: PollCategories = (
     polls || []
   ).reduce<PollCategories>((acc, poll) => {
     // Ensure poll.owner and currentAccount are defined and are strings
-    if (currentAccount && poll.owner === currentAccount) {
+    if (
+      currentAccount &&
+      poll.owner.toLowerCase() === currentAccount.toLowerCase() &&
+      !poll.is_ended
+    ) {
       acc.myPolls.push(poll);
     } else if (poll.is_ended || poll.end_time.getTime() < Date.now()) {
       acc.closedPolls.push(poll);
@@ -65,84 +66,14 @@ export default function Index() {
   }, initialCategories);
 
   return (
-    <div className="container mx-auto mt-8">
+    <div className="container mx-auto mt-8 mb-10">
       {/* Display my polls */}
-
-      <div className="flex justify-left gap-x-2.5 items-center my-4">
-        <div className="flex justify-between gap-x-2.5 items-center">
+      <div className="flex justify-between gap-x-2.5 items-center my-4">
+        <div className="flex justify-left gap-x-2.5 items-center">
           <h1 className="text-3xl font-bold">My Polls</h1>
           <div className="flex gap-x-2.5 items-center">
             {/* Badge to show the total number of polls */}
             <Badge>{!!polls && "Total Polls: " + myPolls.length}</Badge>
-          </div>
-        </div>
-      </div>
-      {/* Button to create a new poll */}
-      <CreatePollDialog
-        onPollCreated={() => {
-          // Show a toast message
-          toast({
-            title: "Poll created",
-            description: "The poll was created successfully.",
-            variant: "default",
-          });
-        }}
-      />
-      <div className="border-b-2 border-gray-300 my-4" />
-      {provider ? (
-        <PollList
-          polls={myPolls}
-          provider={provider}
-          isLoading={swr_polls_status.isLoading}
-          isValidating={swr_polls_status.isValidating}
-          error={swr_polls_status.error}
-          alert={{
-            title: "You have no polls",
-            message: "Create a new poll by clicking the button above.",
-            bg: "bg-blue-200",
-          }}
-        />
-      ) : (
-        <LoadingSpinner />
-      )}
-
-      {/* Display available polls */}
-
-      <div className="flex justify-left gap-x-2.5 items-center my-4">
-        <div className="flex justify-between gap-x-2.5 items-center">
-          <h1 className="text-3xl font-bold">Available polls</h1>
-          <div className="flex gap-x-2.5 items-center">
-            {/* Badge to show the total number of polls */}
-            <Badge>{!!polls && "Total Polls: " + availablePolls.length}</Badge>
-          </div>
-        </div>
-      </div>
-
-      <div className="border-b-2 border-gray-300 my-4" />
-      {provider ? (
-        <PollList
-          polls={myPolls}
-          provider={provider}
-          isLoading={swr_polls_status.isLoading}
-          isValidating={swr_polls_status.isValidating}
-          error={swr_polls_status.error}
-          alert={{
-            title: "No Polls",
-            message: "There are no polls available at the moment.",
-            variant: "info",
-          }}
-        />
-      ) : (
-        <LoadingSpinner />
-      )}
-
-      {/* Display my polls */}
-      <div className="flex justify-left gap-x-2.5 items-center my-4">
-        <div className="flex justify-between gap-x-2.5 items-center">
-          <h1 className="text-3xl font-bold">Closed Polls</h1>
-          <div className="flex gap-x-2.5 items-center">
-            {/* Badge to show the total number of polls */}
-            <Badge>{!!polls && "Total Polls: " + closedPolls.length}</Badge>
           </div>
         </div>
 
@@ -162,6 +93,36 @@ export default function Index() {
       <div className="border-b-2 border-gray-300 my-4" />
       {provider ? (
         <PollList
+          polls={myPolls}
+          provider={provider}
+          isLoading={swr_polls_status.isLoading}
+          isValidating={swr_polls_status.isValidating}
+          error={swr_polls_status.error}
+          showEndButton={true}
+          alert={{
+            title: "You have no polls",
+            message: "Create a new poll by clicking the button above.",
+            bg: "bg-blue-200",
+          }}
+        />
+      ) : (
+        <LoadingSpinner />
+      )}
+
+      {/* Display available polls */}
+      <div className="flex justify-left gap-x-2.5 items-center my-4">
+        <div className="flex justify-between gap-x-2.5 items-center">
+          <h1 className="text-3xl font-bold">Available polls</h1>
+          <div className="flex gap-x-2.5 items-center">
+            {/* Badge to show the total number of polls */}
+            <Badge>{!!polls && "Total Polls: " + availablePolls.length}</Badge>
+          </div>
+        </div>
+      </div>
+
+      <div className="border-b-2 border-gray-300 my-4" />
+      {provider ? (
+        <PollList
           polls={availablePolls}
           provider={provider}
           isLoading={swr_polls_status.isLoading}
@@ -169,12 +130,46 @@ export default function Index() {
           error={swr_polls_status.error}
           alert={{
             title: "No Polls",
-            message: "There are no polls available at the moment.",
-            variant: "info",
+            message:
+              "There are no polls available at the moment. Wait for the owner to create one (or create one yourself!).",
+            bg: "bg-yellow-200",
           }}
         />
       ) : (
         <LoadingSpinner />
+      )}
+
+      {/* Display my polls */}
+      {closedPolls.length > 0 && (
+        <>
+          <div className="flex justify-left gap-x-2.5 items-center my-4">
+            <div className="flex justify-between gap-x-2.5 items-center">
+              <h1 className="text-3xl font-bold">Closed Polls</h1>
+              <div className="flex gap-x-2.5 items-center">
+                {/* Badge to show the total number of polls */}
+                <Badge>{!!polls && "Total Polls: " + closedPolls.length}</Badge>
+              </div>
+            </div>
+          </div>
+
+          <div className="border-b-2 border-gray-300 my-4" />
+          {provider ? (
+            <PollList
+              polls={closedPolls}
+              provider={provider}
+              isLoading={swr_polls_status.isLoading}
+              isValidating={swr_polls_status.isValidating}
+              error={swr_polls_status.error}
+              alert={{
+                title: "There are no closed polls",
+                message: "Come back later to see the results!",
+                bg: "bg-green-200",
+              }}
+            />
+          ) : (
+            <LoadingSpinner />
+          )}
+        </>
       )}
     </div>
   );

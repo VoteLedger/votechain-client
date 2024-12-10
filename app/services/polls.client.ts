@@ -75,6 +75,28 @@ export async function getPolls(provider: BrowserProvider): Promise<Poll[]> {
   return polls;
 }
 
+export async function endPoll(
+  provider: BrowserProvider,
+  pollId: bigint
+): Promise<void> {
+  const contract = await getContract(provider);
+  const tx = await contract.end_poll(pollId);
+  const rc = await tx.wait();
+  console.log("Poll ended successfully: ", rc);
+  return Promise.resolve();
+}
+
+export async function finalizePoll(
+  provider: BrowserProvider,
+  pollId: bigint
+): Promise<void> {
+  const contract = await getContract(provider);
+  const tx = await contract.finalize_poll(pollId);
+  const rc = await tx.wait();
+  console.log("Poll finalized successfully: ", rc);
+  return Promise.resolve();
+}
+
 export async function getPollOptions(
   provider: BrowserProvider,
   pollId: bigint

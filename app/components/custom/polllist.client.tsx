@@ -17,6 +17,7 @@ interface PollListProps {
   polls: Poll[];
   isLoading: boolean;
   isValidating: boolean;
+  showEndButton?: boolean;
   error: unknown;
   alert?: AlertProps;
 }
@@ -27,6 +28,7 @@ export function PollList({
   isLoading,
   isValidating,
   error,
+  showEndButton,
   alert = {
     title: "No Polls",
     message: "There are no polls available at the moment.",
@@ -35,13 +37,13 @@ export function PollList({
 }: PollListProps) {
   const { toast } = useToast();
 
+  console.log("Polls: ", polls);
+
   // callback with sorted + filtered polls
   const sortedPolls = useCallback(() => {
-    return (polls || [])
-      .sort((a, b) => {
-        return a.end_time.getTime() - b.end_time.getTime();
-      })
-      .filter((p) => !p.is_ended);
+    return (polls || []).sort((a, b) => {
+      return a.end_time.getTime() - b.end_time.getTime();
+    });
   }, [polls]);
 
   if (isLoading || isValidating) {
@@ -75,8 +77,8 @@ export function PollList({
           key={idx}
           poll={poll}
           provider={provider}
+          showEndButton={showEndButton}
           onVoteSuccess={() => {
-            console.log("Vote");
             toast({
               title: "Poll vote recorded!",
               description:

@@ -1,6 +1,12 @@
 // components/PollCard.tsx
 import React, { useCallback, useMemo, useState } from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/card";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardFooter,
+} from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
@@ -28,7 +34,7 @@ import {
 import { cn } from "~/lib/utils";
 import { LoadingSpinner } from "../ui/loadingspinner";
 import { BrowserProvider } from "ethers";
-import { castVote } from "~/services/polls.client";
+import { castVote, endPoll, finalizePoll } from "~/services/polls.client";
 import { useSWRConfig } from "swr";
 import { ErrorDecoder } from "ethers-decode-error";
 import Countdown from "../ui/countdown";
@@ -41,10 +47,12 @@ const DEFAULT_VOTING_ERROR_MESSAGE =
 interface PollCardProps {
   provider: BrowserProvider;
   poll: Poll;
+  showEndButton?: boolean;
   onVoteSuccess?: () => void;
   onVoteRequest?: () => void;
   onError?: (error: string) => void;
   onPollExpired?: () => void;
+  onPollClose?: () => void;
 }
 
 const bgColors = [
@@ -64,11 +72,14 @@ const PollCard: React.FC<PollCardProps> = ({
   onVoteSuccess,
   onError,
   onPollExpired,
+  showEndButton = false,
   provider,
 }) => {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [optionsDisabled, setOptionsDisabled] = useState<boolean>(poll.voted);
   const [loadingOption, setLoadingOption] = useState<number | null>(null);
+
+  const [isButtonLoading, setIsButtonLoading] = useState<boolean>(false);
 
   const { mutate } = useSWRConfig();
 
@@ -80,6 +91,46 @@ const PollCard: React.FC<PollCardProps> = ({
   const hasVoted = poll.voted;
   // extract the winning option if any (will be set by the owner when closing manually the poll!)
   const winningOption = poll.winner ? poll.winner : null;
+
+  const onClosePoll = async () => {
+    setIsButtonLoading(true);
+    setOptionsDisabled(true);
+
+    try {
+      await endPoll(provider, poll.id).finally(() => {
+        setIsButtonLoading(false);
+      });
+
+      await finalizePoll(provider, poll.id)
+        .then(() => {
+          // Now, mutate the parent state tho update the polls
+          mutate("/polls");
+
+          // FIXME: add a toast message here
+        })
+        .finally(() => {
+          setIsButtonLoading(false);
+        });
+    } catch (error) {
+      // decode error to get the error message from the smart contract
+      const errorDecoder = ErrorDecoder.create();
+
+      errorDecoder
+        .decode(error)
+        .then((decodedError) => {
+          console.error("Error while voting", decodedError.reason);
+          onError &&
+            onError(decodedError.reason || DEFAULT_VOTING_ERROR_MESSAGE);
+        })
+        .catch(() => {
+          onError && onError(DEFAULT_VOTING_ERROR_MESSAGE);
+        })
+        .finally(() => {
+          setOptionsDisabled(false);
+          setLoadingOption(null);
+        });
+    }
+  };
 
   const onVoteHandler = async (option_index: number) => {
     // Now, disable the options
@@ -222,12 +273,14 @@ const PollCard: React.FC<PollCardProps> = ({
                     <Button
                       className={cn(
                         "rounded-full text-black", // Aggiungi text-black qui
+                        isWinner && "bg-transparent",
                         !hasVoted && !isEnded
                           ? bgColors[index % bgColors.length]
                           : bgColors[0]
                       )}
                       onClick={() => onVoteHandler(index)}
                       disabled={isEnded || hasVoted || optionsDisabled}
+                      variant={isWinner ? "ghost" : "default"}
                     >
                       {loadingOption === index && <LoadingSpinner />}
                       {isWinner && <FaCrown className="text-yellow-500" />}
@@ -242,9 +295,7 @@ const PollCard: React.FC<PollCardProps> = ({
                         </span>
                       </div>
                       {isWinner && (
-                        <span className="text-xs text-green-600">
-                          (Vincitore)
-                        </span>
+                        <span className="text-xs text-green-600">(Winner)</span>
                       )}
                     </Button>
                   </li>
@@ -253,6 +304,14 @@ const PollCard: React.FC<PollCardProps> = ({
             </div>
           </div>
         </CardContent>
+        {showEndButton && poll.end_time < new Date() && (
+          <CardFooter className="flex flex-col p-4 w-full">
+            <Button variant="destructive" size="sm" onClick={onClosePoll}>
+              {isButtonLoading && <LoadingSpinner />}
+              Officially Close Poll
+            </Button>
+          </CardFooter>
+        )}
       </Card>
 
       {/* Modal for Poll Details */}
@@ -303,7 +362,6 @@ const PollCard: React.FC<PollCardProps> = ({
                 <strong>Winner:</strong>{" "}
                 {winningOption ? (
                   <span className="inline-flex items-center space-x-1 text-gray-800">
-                    <FaCrown className="text-yellow-500" />
                     <div>
                       <p>{winningOption}</p>
                     </div>
