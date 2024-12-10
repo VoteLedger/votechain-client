@@ -216,7 +216,7 @@ const PollCard: React.FC<PollCardProps> = ({
                     <Button
                       className={cn(
                         "rounded-full text-black", // Aggiungi text-black qui
-                        !hasVoted
+                        !hasVoted && !isEnded
                           ? bgColors[index % bgColors.length]
                           : bgColors[0]
                       )}
