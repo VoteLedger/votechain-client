@@ -1,23 +1,26 @@
-import { getPolls } from "~/services/polls.client";
 import { LoadingSpinner } from "../ui/loadingspinner";
 import PollCard from "./pollcard";
 import { BrowserProvider } from "ethers";
-import useSWR from "swr";
 import { useToast } from "~/hooks/use-toast.client";
 import { useCallback } from "react";
+import { Poll } from "~/types/services";
 
 interface PollListProps {
   provider: BrowserProvider;
+  polls: Poll[];
+  isLoading: boolean;
+  isValidating: boolean;
+  error: unknown;
 }
 
-export function PollList({ provider }: PollListProps) {
+export function PollList({
+  provider,
+  polls,
+  isLoading,
+  isValidating,
+  error,
+}: PollListProps) {
   const { toast } = useToast();
-  const {
-    data: polls,
-    isLoading,
-    isValidating,
-    error,
-  } = useSWR("polls", () => getPolls(provider));
 
   // callback with sorted + filtered polls
   const sortedPolls = useCallback(() => {

@@ -8,7 +8,7 @@ import { useEffect } from "react";
 import { useToast } from "~/hooks/use-toast.client";
 import { PollList } from "~/components/custom/polllist.client";
 import { LoadingSpinner } from "~/components/ui/loadingspinner";
-import { getPollCount } from "~/services/polls.client";
+import { getPollCount, getPolls } from "~/services/polls.client";
 import useSWR from "swr";
 
 export default function Index() {
@@ -18,9 +18,14 @@ export default function Index() {
   const { toast } = useToast();
   const { provider } = useEthContext();
 
-  const { data, isLoading, isValidating, error } = useSWR(
+  const { data: count, ...swr_count_status } = useSWR(
     provider ? "poll_count" : null,
     () => getPollCount(provider!)
+  );
+
+  const { data: polls, ...swr_polls_status } = useSWR(
+    provider ? "polls" : null,
+    () => getPolls(provider!)
   );
 
   useEffect(() => {
@@ -36,9 +41,10 @@ export default function Index() {
           <h1 className="text-3xl font-bold">Current Polls</h1>
 
           {/* Badge to show the total number of polls */}
-          {!!data && <Badge>{data}</Badge>}
-          {isLoading || (isValidating && <LoadingSpinner />)}
-          {error && (
+          {!!count && <Badge>{count}</Badge>}
+          {swr_count_status.isLoading ||
+            (swr_count_status.isValidating && <LoadingSpinner />)}
+          {swr_count_status.error && (
             <p className="text-red-500">
               An error occurred while fetching the poll count
             </p>
@@ -60,7 +66,17 @@ export default function Index() {
 
       {/* Divider */}
       <div className="border-b-2 border-gray-300 my-4" />
-      {provider ? <PollList provider={provider} /> : <LoadingSpinner />}
+      {provider ? (
+        <PollList
+          polls={polls || []}
+          provider={provider}
+          isLoading={swr_polls_status.isLoading}
+          isValidating={swr_polls_status.isValidating}
+          error={swr_polls_status.error}
+        />
+      ) : (
+        <LoadingSpinner />
+      )}
     </div>
   );
 }
