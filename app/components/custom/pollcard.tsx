@@ -26,6 +26,7 @@ import {
   DialogClose,
 } from "~/components/ui/dialog"; // Ensure you have a Dialog component
 import { cn } from "~/lib/utils";
+import { LoadingSpinner } from "../ui/loadingspinner";
 
 /** Helper function to format the time difference */
 function formatTimeDifference(milliseconds: number) {
@@ -47,7 +48,7 @@ function formatTimeDifference(milliseconds: number) {
 
 interface PollCardProps {
   poll: Poll;
-  onVote?: (pollId: bigint) => void;
+  onVoteSuccess?: (pollId: bigint) => void;
 }
 
 const bgColors = [
@@ -62,11 +63,13 @@ const bgColors = [
   "bg-orange-100",
 ];
 
-const PollCard: React.FC<PollCardProps> = ({ poll, onVote }) => {
+const PollCard: React.FC<PollCardProps> = ({ poll, onVoteSuccess }) => {
   const [timeLeft, setTimeLeft] = useState<number>(
     poll.end_time.getTime() - Date.now()
   );
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [optionsDisabled, setOptionsDisabled] = useState<boolean>(false);
+  const [loadingOption, setLoadingOption] = useState<number | null>(null);
 
   useEffect(() => {
     if (poll.is_ended) return;
@@ -88,6 +91,29 @@ const PollCard: React.FC<PollCardProps> = ({ poll, onVote }) => {
     poll.options.length > 0
       ? poll.options
       : ["McDonalds", "Burger King", "Piazza Rossa"];
+
+  const onVoteHandler = (option_index: number) => {
+    console.log("Voting for option", option_index);
+
+    // Now, disable the options
+    setOptionsDisabled(true);
+
+    // Now, set the loading state for this option
+    setLoadingOption(option_index);
+
+    // ... to the hard stuff here ...
+    try {
+      console.log("Voting for option", option_index);
+
+      // notify parent that vote was successful
+      onVoteSuccess && onVoteSuccess(poll.id);
+    } catch (error) {
+      console.error("Error while voting", error);
+    } finally {
+      setOptionsDisabled(false);
+      setLoadingOption(null);
+    }
+  };
 
   return (
     <>
@@ -161,8 +187,10 @@ const PollCard: React.FC<PollCardProps> = ({ poll, onVote }) => {
                         "rounded-full text-black", // Aggiungi text-black qui
                         bgColors[index % bgColors.length]
                       )}
-                      onClick={() => onVote && onVote(poll.id)}
+                      onClick={() => onVoteHandler(index)}
+                      disabled={isEnded || optionsDisabled}
                     >
+                      {loadingOption === index && <LoadingSpinner />}
                       {isWinner && <FaCrown className="text-yellow-500" />}
                       <div className="flex items-center space-x-1">
                         <span>{option}</span>

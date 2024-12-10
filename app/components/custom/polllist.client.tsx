@@ -3,12 +3,14 @@ import { LoadingSpinner } from "../ui/loadingspinner";
 import PollCard from "./pollcard";
 import { BrowserProvider } from "ethers";
 import useSWR from "swr";
+import { useToast } from "~/hooks/use-toast.client";
 
 interface PollListProps {
   provider: BrowserProvider;
 }
 
 export function PollList({ provider }: PollListProps) {
+  const { toast } = useToast();
   const {
     data: polls,
     isLoading,
@@ -41,11 +43,14 @@ export function PollList({ provider }: PollListProps) {
           <PollCard
             key={idx}
             poll={poll}
-            onVote={() => {
+            onVoteSuccess={() => {
               console.log("Vote");
-            }}
-            onViewDetails={() => {
-              console.log("View details");
+              toast({
+                title: "Poll vote recorded!",
+                description:
+                  "Your vote has been recorded successfully. Wait for the end of the poll to see the results.",
+                duration: 5000,
+              });
             }}
           />
         ))}
