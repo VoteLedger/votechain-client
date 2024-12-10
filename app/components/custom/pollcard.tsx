@@ -162,18 +162,29 @@ const PollCard: React.FC<PollCardProps> = ({
               </div>
             </div>
 
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setIsModalOpen(true)}
-                >
-                  <FaInfoCircle className="text-gray-500 w-5 h-5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>View poll details</TooltipContent>
-            </Tooltip>
+            <div className="flex items-center space-x-2">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setIsModalOpen(true)}
+                  >
+                    <FaInfoCircle className="text-gray-500 w-5 h-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>View poll details</TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center space-x-2 hover:text-gray-800">
+                    <AccountAvatar address={poll.owner} className="w-8 h-8" />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>{poll.owner}</TooltipContent>
+              </Tooltip>
+            </div>
           </div>
 
           {/* Countdown Timer */}
