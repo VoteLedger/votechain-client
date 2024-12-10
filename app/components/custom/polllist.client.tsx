@@ -44,7 +44,7 @@ export function PollList({ provider }: PollListProps) {
   }
 
   return (
-    <div>
+    <div className="space-y-4">
       {/* Display a message if no polls are available */}
       {polls.length === 0 && !error && (
         <div className="p-4 bg-yellow-200 mx-4">

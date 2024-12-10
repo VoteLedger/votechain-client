@@ -1,5 +1,5 @@
 // components/PollCard.tsx
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -14,8 +14,8 @@ import {
   FaCrown,
   FaClock,
   FaPoll,
-  FaUser,
   FaCalendarAlt,
+  FaUserFriends,
 } from "react-icons/fa";
 import {
   Dialog,
@@ -32,6 +32,8 @@ import { castVote } from "~/services/polls.client";
 import { useSWRConfig } from "swr";
 import { ErrorDecoder } from "ethers-decode-error";
 import Countdown from "../ui/countdown";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import OwnerAddress from "./oweneraddress";
 
 const DEFAULT_VOTING_ERROR_MESSAGE =
   "An error occured while voting. Please try again later.";
@@ -65,7 +67,7 @@ const PollCard: React.FC<PollCardProps> = ({
   provider,
 }) => {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [optionsDisabled, setOptionsDisabled] = useState<boolean>(false);
+  const [optionsDisabled, setOptionsDisabled] = useState<boolean>(poll.voted);
   const [loadingOption, setLoadingOption] = useState<number | null>(null);
 
   const { mutate } = useSWRConfig();
@@ -75,8 +77,7 @@ const PollCard: React.FC<PollCardProps> = ({
   // check if the poll has expired (locally)
   const isExpired = poll.end_time < new Date();
   // check if its voted by the current user
-  const isVoted = poll.voted;
-  console.log("PollCard -> isVoted", isVoted);
+  const hasVoted = poll.voted;
   // extract the winning option if any (will be set by the owner when closing manually the poll!)
   const winningOption = poll.winner ? poll.winner : null;
 
@@ -128,11 +129,11 @@ const PollCard: React.FC<PollCardProps> = ({
     }
   };
 
-  const StatusBadge = useMemo(() => {
+  const StatusBadge = useCallback(() => {
     const { title, color } = (() => {
       if (isEnded) return { title: "Closed", color: "destructive" };
       if (isExpired) return { title: "Expired", color: "destructive" };
-      if (isVoted) return { title: "Voted", color: "warning" };
+      if (hasVoted) return { title: "Voted", color: "warning" };
       return { title: "Active", color: "success" };
     })();
 
@@ -144,7 +145,12 @@ const PollCard: React.FC<PollCardProps> = ({
         {title}
       </Badge>
     );
-  }, [isEnded, isExpired, isVoted]);
+  }, [isEnded, isExpired, hasVoted]);
+
+  const totalVotes = useMemo(
+    () => poll.options.reduce((acc, option) => acc + option.votes, 0n),
+    [poll.options]
+  );
 
   return (
     <>
@@ -156,7 +162,9 @@ const PollCard: React.FC<PollCardProps> = ({
               <CardTitle className="text-xl font-semibold text-gray-800">
                 {poll.name}
               </CardTitle>
-              <div className="flex items-center space-x-2">{StatusBadge}</div>
+              <div className="flex items-center space-x-2">
+                <StatusBadge />
+              </div>
             </div>
 
             <Tooltip>
@@ -211,7 +219,7 @@ const PollCard: React.FC<PollCardProps> = ({
                         bgColors[index % bgColors.length]
                       )}
                       onClick={() => onVoteHandler(index)}
-                      disabled={isEnded || optionsDisabled}
+                      disabled={isEnded || hasVoted || optionsDisabled}
                     >
                       {loadingOption === index && <LoadingSpinner />}
                       {isWinner && <FaCrown className="text-yellow-500" />}
@@ -250,13 +258,17 @@ const PollCard: React.FC<PollCardProps> = ({
             Details about the poll and its options
           </DialogDescription>
           <div className="p-4 space-y-4 w-full">
-            {/* Enhanced Information Section with Icons and Divs */}
-            <div className="flex items-center justify-start gap-x-4 text-md text-gray-700">
-              <FaUser className="w-5 h-5 text-gray-500" />
-              <span>
-                <strong>Owner:</strong>
-                <p>{poll.owner}</p>
-              </span>
+            <div className="flex flex-col items-center gap-x-4 text-md text-gray-700">
+              <strong className="text-black self-start">Creator:</strong>
+              {/* <FaUser className="w-5 h-5 text-gray-500" /> */}
+              <Avatar className="w-52 h-52 min-h-52 min-w-52">
+                <AvatarImage
+                  src={`https://api.dicebear.com/9.x/pixel-art/svg?seed=${poll.owner}`}
+                />
+                <AvatarFallback>{poll.owner.slice(-2)}</AvatarFallback>
+              </Avatar>
+
+              <OwnerAddress ownerAddress={poll.owner} />
             </div>
             <div className="flex items-center gap-x-4 text-md text-gray-700">
               <FaCalendarAlt className="w-5 h-5 text-gray-500" />
@@ -270,6 +282,14 @@ const PollCard: React.FC<PollCardProps> = ({
               <span>
                 <strong>Ends:</strong>
                 <p>{poll.end_time.toLocaleString()}</p>
+              </span>
+            </div>
+            {/* totalVotes */}
+            <div className="flex items-center gap-x-4 text-md text-gray-700">
+              <FaUserFriends className="w-5 h-5 text-gray-500" />
+              <span>
+                <strong>Total Votes:</strong>
+                <p>{totalVotes.toString()}</p>
               </span>
             </div>
             <div className="flex items-center gap-x-4 text-md text-gray-700">
