@@ -216,7 +216,9 @@ const PollCard: React.FC<PollCardProps> = ({
                     <Button
                       className={cn(
                         "rounded-full text-black", // Aggiungi text-black qui
-                        bgColors[index % bgColors.length]
+                        !hasVoted
+                          ? bgColors[index % bgColors.length]
+                          : bgColors[0]
                       )}
                       onClick={() => onVoteHandler(index)}
                       disabled={isEnded || hasVoted || optionsDisabled}
