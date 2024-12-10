@@ -1,4 +1,4 @@
-import { CreatePoll, Poll } from "~/types/services";
+import { CreatePoll, Poll, PollOption } from "~/types/services";
 import { getContract } from "~/lib/ethers.client";
 import { BrowserProvider, Interface } from "ethers";
 
@@ -11,6 +11,15 @@ export async function getPollCount(provider: BrowserProvider): Promise<number> {
   const contract = await getContract(provider);
   const count = await contract.poll_count();
   return Number(count);
+}
+
+export async function hasVoted(
+  provider: BrowserProvider,
+  pollId: bigint
+): Promise<boolean> {
+  const contract = await getContract(provider);
+  const result = await contract.has_voted(pollId);
+  return Boolean(result[0]);
 }
 
 export async function castVote(
@@ -43,6 +52,9 @@ export async function getPolls(provider: BrowserProvider): Promise<Poll[]> {
     // Now, fetch the options for the poll
     const options = await getPollOptions(provider, BigInt(result.id));
 
+    // Check whether we have already voted!
+    const hasUservoted = await hasVoted(provider, BigInt(result.id));
+
     // Parse the poll data into a Poll object
     const poll: Poll = {
       id: BigInt(result.id),
@@ -53,11 +65,8 @@ export async function getPolls(provider: BrowserProvider): Promise<Poll[]> {
       winner: result.winner,
       is_ended: result.is_ended,
       owner: result.owner,
-
-      // FIXME: Implement the options and votes
-      voted: false,
-      options,
-      votes: {},
+      voted: hasUservoted,
+      options: options,
     };
 
     // Add poll to list
@@ -69,10 +78,33 @@ export async function getPolls(provider: BrowserProvider): Promise<Poll[]> {
 export async function getPollOptions(
   provider: BrowserProvider,
   pollId: bigint
-): Promise<string[]> {
+): Promise<PollOption[]> {
   const contract = await getContract(provider);
-  const result = await contract.poll_options(pollId);
-  return Object.values(result) as string[];
+  const results = await contract.poll_options(pollId);
+
+  if (results.length === 0) {
+    return Promise.reject("No options found for poll");
+  }
+
+  // get the options
+  const options = Object.values(results[0]) as string[];
+  const votes = Object.values(results[1]) as bigint[];
+
+  if (options.length !== votes.length) {
+    return Promise.reject("Options and votes do not match");
+  }
+
+  // Now, zip trough the options and votes and create poll options
+  const pollOptions: PollOption[] = [];
+
+  for (let i = 0; i < options.length; i++) {
+    pollOptions.push({
+      name: options[i],
+      votes: votes[i],
+    });
+  }
+
+  return pollOptions;
 }
 
 export async function createPoll(

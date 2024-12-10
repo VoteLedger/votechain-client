@@ -1,5 +1,5 @@
 // components/PollCard.tsx
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -31,34 +31,18 @@ import { BrowserProvider } from "ethers";
 import { castVote } from "~/services/polls.client";
 import { useSWRConfig } from "swr";
 import { ErrorDecoder } from "ethers-decode-error";
+import Countdown from "../ui/countdown";
 
 const DEFAULT_VOTING_ERROR_MESSAGE =
   "An error occured while voting. Please try again later.";
 
-/** Helper function to format the time difference */
-function formatTimeDifference(milliseconds: number) {
-  if (milliseconds <= 0) return "0s";
-
-  const seconds = Math.floor(milliseconds / 1000) % 60;
-  const minutes = Math.floor(milliseconds / (1000 * 60)) % 60;
-  const hours = Math.floor(milliseconds / (1000 * 60 * 60)) % 24;
-  const days = Math.floor(milliseconds / (1000 * 60 * 60 * 24));
-
-  const parts: string[] = [];
-  if (days > 0) parts.push(`${days}d`);
-  if (hours > 0) parts.push(`${hours}h`);
-  if (minutes > 0) parts.push(`${minutes}m`);
-  parts.push(`${seconds}s`);
-
-  return parts.join(" ");
-}
-
 interface PollCardProps {
   provider: BrowserProvider;
   poll: Poll;
-  onVoteSuccess?: (pollId: bigint) => void;
-  onVoteRequest?: (pollId: bigint) => void;
+  onVoteSuccess?: () => void;
+  onVoteRequest?: () => void;
   onError?: (error: string) => void;
+  onPollExpired?: () => void;
 }
 
 const bgColors = [
@@ -77,30 +61,16 @@ const PollCard: React.FC<PollCardProps> = ({
   poll,
   onVoteSuccess,
   onError,
+  onPollExpired,
   provider,
 }) => {
-  const [timeLeft, setTimeLeft] = useState<number>(
-    poll.end_time.getTime() - Date.now()
-  );
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [optionsDisabled, setOptionsDisabled] = useState<boolean>(false);
   const [loadingOption, setLoadingOption] = useState<number | null>(null);
 
   const { mutate } = useSWRConfig();
 
-  useEffect(() => {
-    if (poll.is_ended) return;
-    const timer = setInterval(() => {
-      const diff = poll.end_time.getTime() - Date.now();
-      setTimeLeft(diff);
-      if (diff <= 0) {
-        clearInterval(timer);
-      }
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [poll]);
-
-  const isEnded = poll.is_ended || timeLeft <= 0;
+  const isEnded = poll.is_ended;
   const winningOption = isEnded && poll.winner ? poll.winner : null;
 
   const onVoteHandler = async (option_index: number) => {
@@ -124,7 +94,7 @@ const PollCard: React.FC<PollCardProps> = ({
           mutate("/polls");
 
           // notify parent that vote was successful
-          onVoteSuccess && onVoteSuccess(poll.id);
+          onVoteSuccess && onVoteSuccess();
         })
         .finally(() => {
           setOptionsDisabled(false);
@@ -151,6 +121,19 @@ const PollCard: React.FC<PollCardProps> = ({
     }
   };
 
+  const computePollStateName = useCallback(() => {
+    console.log(poll.voted, poll.is_ended);
+    if (poll.voted && !poll.is_ended) return "Voted";
+    else if (poll.is_ended) return "Ended";
+    else return "Active";
+  }, [poll.voted, poll.is_ended]);
+
+  const computePollStateColor = useCallback(() => {
+    if (poll.voted && !poll.is_ended) return "success";
+    else if (poll.is_ended) return "destructive";
+    else return "warning";
+  }, [poll.voted, poll.is_ended]);
+
   return (
     <>
       <Card className="shadow-md hover:shadow-lg transition-shadow duration-300 bg-white border border-gray-200 rounded-lg">
@@ -162,11 +145,8 @@ const PollCard: React.FC<PollCardProps> = ({
                 {poll.name}
               </CardTitle>
               <div className="flex items-center space-x-2">
-                <Badge
-                  variant={isEnded ? "destructive" : "success"}
-                  className="text-sm"
-                >
-                  {isEnded ? "Ended" : "Active"}
+                <Badge variant={computePollStateColor()} className="text-sm">
+                  {computePollStateName()}
                 </Badge>
               </div>
             </div>
@@ -187,11 +167,10 @@ const PollCard: React.FC<PollCardProps> = ({
 
           {/* Countdown Timer */}
           {!isEnded ? (
-            <div className="flex items-center space-x-2 text-gray-700">
-              <FaClock className="w-4 h-4 text-gray-500" />
-              <strong>Time left:</strong>
-              <span>{formatTimeDifference(timeLeft)}</span>
-            </div>
+            <Countdown
+              end_date={poll.end_time}
+              onEnd={() => onPollExpired && onPollExpired()}
+            />
           ) : (
             <div className="mt-4 text-red-600 font-semibold">
               This poll has ended.
@@ -208,7 +187,7 @@ const PollCard: React.FC<PollCardProps> = ({
             {/* Div with flex-row and when out of space, it wraps */}
             <div className="flex flex-wrap flex-row items-center space-x-2">
               {poll.options.map((option, index) => {
-                const isWinner = winningOption && winningOption === option;
+                const isWinner = winningOption && winningOption === option.name;
                 return (
                   <li
                     key={index}
@@ -229,13 +208,12 @@ const PollCard: React.FC<PollCardProps> = ({
                       {loadingOption === index && <LoadingSpinner />}
                       {isWinner && <FaCrown className="text-yellow-500" />}
                       <div className="flex items-center space-x-1">
-                        <span>{option}</span>
+                        <span>{option.name}</span>
                         <span className="text-sm text-gray-500">
                           -{" "}
                           <strong>
-                            {poll.votes[option]
-                              ? poll.votes[option].toString()
-                              : "0"}
+                            {option.votes.toString()} vote
+                            {option.votes !== BigInt(1) && "s"}
                           </strong>
                         </span>
                       </div>
