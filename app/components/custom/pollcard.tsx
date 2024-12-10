@@ -1,5 +1,5 @@
 // components/PollCard.tsx
-import React, { useCallback, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -70,8 +70,15 @@ const PollCard: React.FC<PollCardProps> = ({
 
   const { mutate } = useSWRConfig();
 
+  // check if the poll was closed officially by the owner (official result computed on-china)
   const isEnded = poll.is_ended;
-  const winningOption = isEnded && poll.winner ? poll.winner : null;
+  // check if the poll has expired (locally)
+  const isExpired = poll.end_time < new Date();
+  // check if its voted by the current user
+  const isVoted = poll.voted;
+  console.log("PollCard -> isVoted", isVoted);
+  // extract the winning option if any (will be set by the owner when closing manually the poll!)
+  const winningOption = poll.winner ? poll.winner : null;
 
   const onVoteHandler = async (option_index: number) => {
     console.log("Voting for option", option_index);
@@ -121,18 +128,23 @@ const PollCard: React.FC<PollCardProps> = ({
     }
   };
 
-  const computePollStateName = useCallback(() => {
-    console.log(poll.voted, poll.is_ended);
-    if (poll.voted && !poll.is_ended) return "Voted";
-    else if (poll.is_ended) return "Ended";
-    else return "Active";
-  }, [poll.voted, poll.is_ended]);
+  const StatusBadge = useMemo(() => {
+    const { title, color } = (() => {
+      if (isEnded) return { title: "Closed", color: "destructive" };
+      if (isExpired) return { title: "Expired", color: "destructive" };
+      if (isVoted) return { title: "Voted", color: "warning" };
+      return { title: "Active", color: "success" };
+    })();
 
-  const computePollStateColor = useCallback(() => {
-    if (poll.voted && !poll.is_ended) return "success";
-    else if (poll.is_ended) return "destructive";
-    else return "warning";
-  }, [poll.voted, poll.is_ended]);
+    return (
+      <Badge
+        variant={color as "destructive" | "success" | "warning"}
+        className="text-sm"
+      >
+        {title}
+      </Badge>
+    );
+  }, [isEnded, isExpired, isVoted]);
 
   return (
     <>
@@ -144,11 +156,7 @@ const PollCard: React.FC<PollCardProps> = ({
               <CardTitle className="text-xl font-semibold text-gray-800">
                 {poll.name}
               </CardTitle>
-              <div className="flex items-center space-x-2">
-                <Badge variant={computePollStateColor()} className="text-sm">
-                  {computePollStateName()}
-                </Badge>
-              </div>
+              <div className="flex items-center space-x-2">{StatusBadge}</div>
             </div>
 
             <Tooltip>

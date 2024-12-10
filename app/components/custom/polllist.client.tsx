@@ -4,6 +4,7 @@ import PollCard from "./pollcard";
 import { BrowserProvider } from "ethers";
 import useSWR from "swr";
 import { useToast } from "~/hooks/use-toast.client";
+import { useCallback } from "react";
 
 interface PollListProps {
   provider: BrowserProvider;
@@ -17,6 +18,15 @@ export function PollList({ provider }: PollListProps) {
     isValidating,
     error,
   } = useSWR("polls", () => getPolls(provider));
+
+  // callback with sorted + filtered polls
+  const sortedPolls = useCallback(() => {
+    return (polls || [])
+      .sort((a, b) => {
+        return a.end_time.getTime() - b.end_time.getTime();
+      })
+      .filter((p) => !p.is_ended);
+  }, [polls]);
 
   if (isLoading || isValidating) {
     return <LoadingSpinner />;
@@ -44,32 +54,30 @@ export function PollList({ provider }: PollListProps) {
       )}
 
       {/* Display each open poll's details */}
-      {polls
-        .filter((p) => !p.is_ended)
-        .map((poll, idx) => (
-          <PollCard
-            key={idx}
-            poll={poll}
-            provider={provider}
-            onVoteSuccess={() => {
-              console.log("Vote");
-              toast({
-                title: "Poll vote recorded!",
-                description:
-                  "Your vote has been recorded successfully. Wait for the end of the poll to see the results.",
-                duration: 5000,
-              });
-            }}
-            onError={(msg) => {
-              toast({
-                title: "Error",
-                description: msg,
-                variant: "destructive",
-                duration: 5000,
-              });
-            }}
-          />
-        ))}
+      {sortedPolls().map((poll, idx) => (
+        <PollCard
+          key={idx}
+          poll={poll}
+          provider={provider}
+          onVoteSuccess={() => {
+            console.log("Vote");
+            toast({
+              title: "Poll vote recorded!",
+              description:
+                "Your vote has been recorded successfully. Wait for the end of the poll to see the results.",
+              duration: 5000,
+            });
+          }}
+          onError={(msg) => {
+            toast({
+              title: "Error",
+              description: msg,
+              variant: "destructive",
+              duration: 5000,
+            });
+          }}
+        />
+      ))}
     </div>
   );
 }

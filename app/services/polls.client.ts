@@ -55,6 +55,8 @@ export async function getPolls(provider: BrowserProvider): Promise<Poll[]> {
     // Check whether we have already voted!
     const hasUservoted = await hasVoted(provider, BigInt(result.id));
 
+    console.log("Has user voted: ", hasUservoted);
+
     // Parse the poll data into a Poll object
     const poll: Poll = {
       id: BigInt(result.id),
