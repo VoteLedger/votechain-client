@@ -32,8 +32,8 @@ import { castVote } from "~/services/polls.client";
 import { useSWRConfig } from "swr";
 import { ErrorDecoder } from "ethers-decode-error";
 import Countdown from "../ui/countdown";
-import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import OwnerAddress from "./oweneraddress";
+import { AccountAvatar } from "./accountavatar";
 
 const DEFAULT_VOTING_ERROR_MESSAGE =
   "An error occured while voting. Please try again later.";
@@ -82,8 +82,6 @@ const PollCard: React.FC<PollCardProps> = ({
   const winningOption = poll.winner ? poll.winner : null;
 
   const onVoteHandler = async (option_index: number) => {
-    console.log("Voting for option", option_index);
-
     // Now, disable the options
     setOptionsDisabled(true);
 
@@ -92,13 +90,10 @@ const PollCard: React.FC<PollCardProps> = ({
 
     // cast vote and wait for the response
     try {
-      console.log("Voting for option", option_index);
-
       // Call the vote function
       await castVote(provider, poll.id, BigInt(option_index))
         .then(() => {
           // Now, mutate the parent state tho update the polls
-          console.log("Vote casted successfully. Updating...");
           mutate("/polls");
 
           // notify parent that vote was successful
@@ -263,13 +258,10 @@ const PollCard: React.FC<PollCardProps> = ({
             <div className="flex flex-col items-center gap-x-4 text-md text-gray-700">
               <strong className="text-black self-start">Creator:</strong>
               {/* <FaUser className="w-5 h-5 text-gray-500" /> */}
-              <Avatar className="w-52 h-52 min-h-52 min-w-52">
-                <AvatarImage
-                  src={`https://api.dicebear.com/9.x/pixel-art/svg?seed=${poll.owner}`}
-                />
-                <AvatarFallback>{poll.owner.slice(-2)}</AvatarFallback>
-              </Avatar>
-
+              <AccountAvatar
+                address={poll.owner}
+                className="w-52 h-52 min-h-52 min-w-52"
+              />
               <OwnerAddress ownerAddress={poll.owner} />
             </div>
             <div className="flex items-center gap-x-4 text-md text-gray-700">
