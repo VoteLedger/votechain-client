@@ -1,6 +1,6 @@
 import { BrowserProvider, Contract, Interface } from "ethers";
 
-const CONTRACT_ADDRESS = "0x973Adb9DE34C974C3A421A870203C5be9059E9Fa";
+const CONTRACT_ADDRESS = "0x8476FC408B2dF4d03E9705FC2768d9179B62800c";
 
 const getContract = async (provider: BrowserProvider) => {
   // define the abi

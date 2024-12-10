@@ -34,7 +34,7 @@ import {
 import { cn } from "~/lib/utils";
 import { LoadingSpinner } from "../ui/loadingspinner";
 import { BrowserProvider } from "ethers";
-import { castVote, endPoll, finalizePoll } from "~/services/polls.client";
+import { castVote, endPoll } from "~/services/polls.client";
 import { useSWRConfig } from "swr";
 import { ErrorDecoder } from "ethers-decode-error";
 import Countdown from "../ui/countdown";
@@ -97,16 +97,10 @@ const PollCard: React.FC<PollCardProps> = ({
     setOptionsDisabled(true);
 
     try {
-      await endPoll(provider, poll.id).finally(() => {
-        setIsButtonLoading(false);
-      });
-
-      await finalizePoll(provider, poll.id)
+      await endPoll(provider, poll.id)
         .then(() => {
           // Now, mutate the parent state tho update the polls
           mutate("/polls");
-
-          // FIXME: add a toast message here
         })
         .finally(() => {
           setIsButtonLoading(false);
