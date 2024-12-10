@@ -28,6 +28,12 @@ import {
 import { cn } from "~/lib/utils";
 import { LoadingSpinner } from "../ui/loadingspinner";
 import { BrowserProvider } from "ethers";
+import { castVote } from "~/services/polls.client";
+import { useSWRConfig } from "swr";
+import { ErrorDecoder } from "ethers-decode-error";
+
+const DEFAULT_VOTING_ERROR_MESSAGE =
+  "An error occured while voting. Please try again later.";
 
 /** Helper function to format the time difference */
 function formatTimeDifference(milliseconds: number) {
@@ -52,6 +58,7 @@ interface PollCardProps {
   poll: Poll;
   onVoteSuccess?: (pollId: bigint) => void;
   onVoteRequest?: (pollId: bigint) => void;
+  onError?: (error: string) => void;
 }
 
 const bgColors = [
@@ -66,13 +73,20 @@ const bgColors = [
   "bg-orange-100",
 ];
 
-const PollCard: React.FC<PollCardProps> = ({ poll, onVoteSuccess }) => {
+const PollCard: React.FC<PollCardProps> = ({
+  poll,
+  onVoteSuccess,
+  onError,
+  provider,
+}) => {
   const [timeLeft, setTimeLeft] = useState<number>(
     poll.end_time.getTime() - Date.now()
   );
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [optionsDisabled, setOptionsDisabled] = useState<boolean>(false);
   const [loadingOption, setLoadingOption] = useState<number | null>(null);
+
+  const { mutate } = useSWRConfig();
 
   useEffect(() => {
     if (poll.is_ended) return;
@@ -89,7 +103,7 @@ const PollCard: React.FC<PollCardProps> = ({ poll, onVoteSuccess }) => {
   const isEnded = poll.is_ended || timeLeft <= 0;
   const winningOption = isEnded && poll.winner ? poll.winner : null;
 
-  const onVoteHandler = (option_index: number) => {
+  const onVoteHandler = async (option_index: number) => {
     console.log("Voting for option", option_index);
 
     // Now, disable the options
@@ -98,17 +112,42 @@ const PollCard: React.FC<PollCardProps> = ({ poll, onVoteSuccess }) => {
     // Now, set the loading state for this option
     setLoadingOption(option_index);
 
-    // ... to the hard stuff here ...
+    // cast vote and wait for the response
     try {
       console.log("Voting for option", option_index);
 
-      // notify parent that vote was successful
-      onVoteSuccess && onVoteSuccess(poll.id);
+      // Call the vote function
+      await castVote(provider, poll.id, BigInt(option_index))
+        .then(() => {
+          // Now, mutate the parent state tho update the polls
+          console.log("Vote casted successfully. Updating...");
+          mutate("/polls");
+
+          // notify parent that vote was successful
+          onVoteSuccess && onVoteSuccess(poll.id);
+        })
+        .finally(() => {
+          setOptionsDisabled(false);
+          setLoadingOption(null);
+        });
     } catch (error) {
-      console.error("Error while voting", error);
-    } finally {
-      setOptionsDisabled(false);
-      setLoadingOption(null);
+      // decode error to get the error message from the smart contract
+      const errorDecoder = ErrorDecoder.create();
+
+      errorDecoder
+        .decode(error)
+        .then((decodedError) => {
+          console.error("Error while voting", decodedError.reason);
+          onError &&
+            onError(decodedError.reason || DEFAULT_VOTING_ERROR_MESSAGE);
+        })
+        .catch(() => {
+          onError && onError(DEFAULT_VOTING_ERROR_MESSAGE);
+        })
+        .finally(() => {
+          setOptionsDisabled(false);
+          setLoadingOption(null);
+        });
     }
   };
 

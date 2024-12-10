@@ -53,6 +53,14 @@ export function PollList({ provider }: PollListProps) {
                 duration: 5000,
               });
             }}
+            onError={(msg) => {
+              toast({
+                title: "Error",
+                description: msg,
+                variant: "destructive",
+                duration: 5000,
+              });
+            }}
           />
         ))}
     </div>

@@ -13,6 +13,25 @@ export async function getPollCount(provider: BrowserProvider): Promise<number> {
   return Number(count);
 }
 
+export async function castVote(
+  provider: BrowserProvider,
+  pollId: bigint,
+  optionId: bigint
+): Promise<void> {
+  // get the contract
+  const contract = await getContract(provider);
+  const tx = await contract.cast_vote(pollId, optionId);
+
+  console.log("Vote done. Now waiting for the transaction to be mined");
+
+  // wait for the transaction to be mined
+  const rc = await tx.wait();
+
+  // log the result
+  console.log("Vote casted successfully: ", rc);
+  return Promise.resolve();
+}
+
 export async function getPolls(provider: BrowserProvider): Promise<Poll[]> {
   const contract = await getContract(provider);
   const count = await getPollCount(provider);

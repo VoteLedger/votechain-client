@@ -5,7 +5,7 @@ const getContract = async (provider: BrowserProvider) => {
   const abi = [
     "function create_poll(string _name, string _description, string[] _options, uint _start_time, uint _end_time) public returns (uint)",
     "function end_poll(uint poll_id) public",
-    "function cast_vote(uint poll_id, string option) public",
+    "function cast_vote(uint poll_id, uint option_index) public",
     "function finalize_poll(uint poll_id) public",
     "function get_winner(uint poll_id) public view returns (string)",
     "function get_votes(uint poll_id, string option) public view returns (uint)",
@@ -22,7 +22,7 @@ const getContract = async (provider: BrowserProvider) => {
 
   // create the contract instance
   const contract = new Contract(
-    "0x7ef8E99980Da5bcEDcF7C10f41E55f759F6A174B",
+    "0x82B769500E34362a76DF81150e12C746093D954F",
     iface,
     signer
   );
