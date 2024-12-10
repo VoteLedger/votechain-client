@@ -27,6 +27,7 @@ import {
 } from "~/components/ui/dialog"; // Ensure you have a Dialog component
 import { cn } from "~/lib/utils";
 import { LoadingSpinner } from "../ui/loadingspinner";
+import { BrowserProvider } from "ethers";
 
 /** Helper function to format the time difference */
 function formatTimeDifference(milliseconds: number) {
@@ -47,8 +48,10 @@ function formatTimeDifference(milliseconds: number) {
 }
 
 interface PollCardProps {
+  provider: BrowserProvider;
   poll: Poll;
   onVoteSuccess?: (pollId: bigint) => void;
+  onVoteRequest?: (pollId: bigint) => void;
 }
 
 const bgColors = [
@@ -85,12 +88,6 @@ const PollCard: React.FC<PollCardProps> = ({ poll, onVoteSuccess }) => {
 
   const isEnded = poll.is_ended || timeLeft <= 0;
   const winningOption = isEnded && poll.winner ? poll.winner : null;
-
-  // Dummy options if not already implemented
-  const options =
-    poll.options.length > 0
-      ? poll.options
-      : ["McDonalds", "Burger King", "Piazza Rossa"];
 
   const onVoteHandler = (option_index: number) => {
     console.log("Voting for option", option_index);
@@ -171,7 +168,7 @@ const PollCard: React.FC<PollCardProps> = ({ poll, onVoteSuccess }) => {
             <h3 className="font-semibold text-gray-700 mb-1">Options:</h3>
             {/* Div with flex-row and when out of space, it wraps */}
             <div className="flex flex-wrap flex-row items-center space-x-2">
-              {options.map((option, index) => {
+              {poll.options.map((option, index) => {
                 const isWinner = winningOption && winningOption === option;
                 return (
                   <li

@@ -13,8 +13,7 @@ const getContract = async (provider: BrowserProvider) => {
 
     // Access poll mappings!
     "function polls(uint256) view returns (uint256 id, string name, string description, uint256 created_at, uint256 start_time, uint256 end_time, string winner, bool is_ended, address owner)",
-    "function polls(uint256, address) view returns (bool)",
-    "function polls(uint256, string) view returns (uint256)",
+    "function poll_options(uint256 poll_id) view returns (string[])",
   ];
 
   // convert the abi to JSON

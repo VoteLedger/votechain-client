@@ -43,6 +43,7 @@ export function PollList({ provider }: PollListProps) {
           <PollCard
             key={idx}
             poll={poll}
+            provider={provider}
             onVoteSuccess={() => {
               console.log("Vote");
               toast({

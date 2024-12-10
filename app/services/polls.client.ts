@@ -21,6 +21,9 @@ export async function getPolls(provider: BrowserProvider): Promise<Poll[]> {
   for (let i = 0; i < count; i++) {
     const result = await contract.polls(i);
 
+    // Now, fetch the options for the poll
+    const options = await getPollOptions(provider, BigInt(result.id));
+
     // Parse the poll data into a Poll object
     const poll: Poll = {
       id: BigInt(result.id),
@@ -34,7 +37,7 @@ export async function getPolls(provider: BrowserProvider): Promise<Poll[]> {
 
       // FIXME: Implement the options and votes
       voted: false,
-      options: [],
+      options,
       votes: {},
     };
 
@@ -42,6 +45,15 @@ export async function getPolls(provider: BrowserProvider): Promise<Poll[]> {
     polls.push(poll);
   }
   return polls;
+}
+
+export async function getPollOptions(
+  provider: BrowserProvider,
+  pollId: bigint
+): Promise<string[]> {
+  const contract = await getContract(provider);
+  const result = await contract.poll_options(pollId);
+  return Object.values(result) as string[];
 }
 
 export async function createPoll(
