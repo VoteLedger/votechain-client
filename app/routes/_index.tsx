@@ -8,8 +8,15 @@ import { useEffect } from "react";
 import { useToast } from "~/hooks/use-toast.client";
 import { PollList } from "~/components/custom/polllist.client";
 import { LoadingSpinner } from "~/components/ui/loadingspinner";
-import { getPollCount, getPolls } from "~/services/polls.client";
+import { getPolls } from "~/services/polls.client";
 import useSWR from "swr";
+import { Poll } from "~/types/services";
+
+interface PollCategories {
+  myPolls: Poll[];
+  availablePolls: Poll[];
+  closedPolls: Poll[];
+}
 
 export default function Index() {
   // Load the eth context
@@ -17,11 +24,6 @@ export default function Index() {
 
   const { toast } = useToast();
   const { provider } = useEthContext();
-
-  const { data: count, ...swr_count_status } = useSWR(
-    provider ? "poll_count" : null,
-    () => getPollCount(provider!)
-  );
 
   const { data: polls, ...swr_polls_status } = useSWR(
     provider ? "polls" : null,
@@ -34,21 +36,114 @@ export default function Index() {
     }
   }, [accounts.length, connectWallet]);
 
+  // Assuming you have access to 'accounts' and it's an array of strings (addresses)
+  const currentAccount = accounts && accounts.length > 0 ? accounts[0] : null;
+
+  // Initialize the accumulator with the defined type
+  const initialCategories: PollCategories = {
+    myPolls: [],
+    availablePolls: [],
+    closedPolls: [],
+  };
+
+  console.log("Polls: ", polls);
+  console.log(currentAccount);
+
+  // Categorize the polls using reduce with explicit typing
+  const { myPolls, availablePolls, closedPolls }: PollCategories = (
+    polls || []
+  ).reduce<PollCategories>((acc, poll) => {
+    // Ensure poll.owner and currentAccount are defined and are strings
+    if (currentAccount && poll.owner === currentAccount) {
+      acc.myPolls.push(poll);
+    } else if (poll.is_ended || poll.end_time.getTime() < Date.now()) {
+      acc.closedPolls.push(poll);
+    } else {
+      acc.availablePolls.push(poll);
+    }
+    return acc;
+  }, initialCategories);
+
   return (
     <div className="container mx-auto mt-8">
-      <div className="flex justify-between iterms-center">
-        <div className="flex justify-left gap-x-2.5 items-center">
-          <h1 className="text-3xl font-bold">Current Polls</h1>
+      {/* Display my polls */}
 
-          {/* Badge to show the total number of polls */}
-          {!!count && <Badge>{count}</Badge>}
-          {swr_count_status.isLoading ||
-            (swr_count_status.isValidating && <LoadingSpinner />)}
-          {swr_count_status.error && (
-            <p className="text-red-500">
-              An error occurred while fetching the poll count
-            </p>
-          )}
+      <div className="flex justify-left gap-x-2.5 items-center my-4">
+        <div className="flex justify-between gap-x-2.5 items-center">
+          <h1 className="text-3xl font-bold">My Polls</h1>
+          <div className="flex gap-x-2.5 items-center">
+            {/* Badge to show the total number of polls */}
+            <Badge>{!!polls && "Total Polls: " + myPolls.length}</Badge>
+          </div>
+        </div>
+      </div>
+      {/* Button to create a new poll */}
+      <CreatePollDialog
+        onPollCreated={() => {
+          // Show a toast message
+          toast({
+            title: "Poll created",
+            description: "The poll was created successfully.",
+            variant: "default",
+          });
+        }}
+      />
+      <div className="border-b-2 border-gray-300 my-4" />
+      {provider ? (
+        <PollList
+          polls={myPolls}
+          provider={provider}
+          isLoading={swr_polls_status.isLoading}
+          isValidating={swr_polls_status.isValidating}
+          error={swr_polls_status.error}
+          alert={{
+            title: "You have no polls",
+            message: "Create a new poll by clicking the button above.",
+            bg: "bg-blue-200",
+          }}
+        />
+      ) : (
+        <LoadingSpinner />
+      )}
+
+      {/* Display available polls */}
+
+      <div className="flex justify-left gap-x-2.5 items-center my-4">
+        <div className="flex justify-between gap-x-2.5 items-center">
+          <h1 className="text-3xl font-bold">Available polls</h1>
+          <div className="flex gap-x-2.5 items-center">
+            {/* Badge to show the total number of polls */}
+            <Badge>{!!polls && "Total Polls: " + availablePolls.length}</Badge>
+          </div>
+        </div>
+      </div>
+
+      <div className="border-b-2 border-gray-300 my-4" />
+      {provider ? (
+        <PollList
+          polls={myPolls}
+          provider={provider}
+          isLoading={swr_polls_status.isLoading}
+          isValidating={swr_polls_status.isValidating}
+          error={swr_polls_status.error}
+          alert={{
+            title: "No Polls",
+            message: "There are no polls available at the moment.",
+            variant: "info",
+          }}
+        />
+      ) : (
+        <LoadingSpinner />
+      )}
+
+      {/* Display my polls */}
+      <div className="flex justify-left gap-x-2.5 items-center my-4">
+        <div className="flex justify-between gap-x-2.5 items-center">
+          <h1 className="text-3xl font-bold">Closed Polls</h1>
+          <div className="flex gap-x-2.5 items-center">
+            {/* Badge to show the total number of polls */}
+            <Badge>{!!polls && "Total Polls: " + closedPolls.length}</Badge>
+          </div>
         </div>
 
         {/* Button to create a new poll */}
@@ -64,15 +159,19 @@ export default function Index() {
         />
       </div>
 
-      {/* Divider */}
       <div className="border-b-2 border-gray-300 my-4" />
       {provider ? (
         <PollList
-          polls={polls || []}
+          polls={availablePolls}
           provider={provider}
           isLoading={swr_polls_status.isLoading}
           isValidating={swr_polls_status.isValidating}
           error={swr_polls_status.error}
+          alert={{
+            title: "No Polls",
+            message: "There are no polls available at the moment.",
+            variant: "info",
+          }}
         />
       ) : (
         <LoadingSpinner />

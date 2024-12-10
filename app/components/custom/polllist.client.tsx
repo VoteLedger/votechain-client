@@ -4,6 +4,13 @@ import { BrowserProvider } from "ethers";
 import { useToast } from "~/hooks/use-toast.client";
 import { useCallback } from "react";
 import { Poll } from "~/types/services";
+import { cn } from "~/lib/utils";
+
+interface AlertProps {
+  title: string;
+  message: string;
+  bg: string;
+}
 
 interface PollListProps {
   provider: BrowserProvider;
@@ -11,6 +18,7 @@ interface PollListProps {
   isLoading: boolean;
   isValidating: boolean;
   error: unknown;
+  alert?: AlertProps;
 }
 
 export function PollList({
@@ -19,6 +27,11 @@ export function PollList({
   isLoading,
   isValidating,
   error,
+  alert = {
+    title: "No Polls",
+    message: "There are no polls available at the moment.",
+    bg: "bg-yellow-200",
+  },
 }: PollListProps) {
   const { toast } = useToast();
 
@@ -50,9 +63,9 @@ export function PollList({
     <div className="space-y-4">
       {/* Display a message if no polls are available */}
       {polls.length === 0 && !error && (
-        <div className="p-4 bg-yellow-200 mx-4">
-          <h2 className="text-xl font-bold">No Polls</h2>
-          <p>There are no polls available at the moment.</p>
+        <div className={cn("p-4 mx-4", alert.bg)}>
+          <h2 className="text-xl font-bold">{alert.title}</h2>
+          <p>{alert.message}</p>
         </div>
       )}
 
