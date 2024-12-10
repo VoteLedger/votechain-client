@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useSWRConfig } from "swr";
 import { Button } from "~/components/ui/button";
 import {
   Dialog,
@@ -47,6 +48,9 @@ export const CreatePollDialog: React.FC<CreatePollDialogProps> = ({
   // Load provider from context
   const { provider } = useEthContext();
 
+  // Load mutate function from SWR provider
+  const { mutate } = useSWRConfig();
+
   // Ensure that the provider is available
   if (!provider) {
     return null;
@@ -91,14 +95,20 @@ export const CreatePollDialog: React.FC<CreatePollDialogProps> = ({
     // remove all errors
     setErrors({});
 
-    // Extract data from form
+    // Extract data from form (unsafe but works!)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const name = (e.target as any).name.value as string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const description = (e.target as any).description.value as string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const startTime = new Date((e.target as any).startTime.value as string);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const endTime = new Date((e.target as any).endTime.value as string);
 
     // extract array of options
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const options = Array.from((e.target as any)["options[]"]).map(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (option: any) => option.value
     );
 
@@ -126,6 +136,12 @@ export const CreatePollDialog: React.FC<CreatePollDialogProps> = ({
     // call the onPollCreated callback
     if (recipt) {
       console.log("Poll created: ", recipt);
+
+      // Tell SWR to revalidate the list of polls in the homepage
+      console.log("Mutating polls");
+      mutate("polls");
+
+      // notify that the poll has been created
       onPollCreated && onPollCreated(recipt);
     } else {
       onError && onError("Failed to create poll.");

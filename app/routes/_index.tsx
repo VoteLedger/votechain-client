@@ -1,67 +1,66 @@
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
 import { redirect } from "@remix-run/react";
 import { getSession, isSession } from "~/lib/session";
-import {
-  CreatePollDialog,
-  PollFormFields,
-} from "~/components/custom/createpolldialog.client";
+import { CreatePollDialog } from "~/components/custom/createpolldialog.client";
+import { Badge } from "~/components/ui/badge";
 import { useEthContext } from "~/providers/ethcontextprovider.client";
 import { useEffect } from "react";
 import { useToast } from "~/hooks/use-toast.client";
-import { Button } from "~/components/ui/button";
-
-type ActionData = {
-  errors?: {
-    [key in PollFormFields[number]]?: string;
-  };
-};
+import { PollList } from "~/components/custom/polllist.client";
+import { LoadingSpinner } from "~/components/ui/loadingspinner";
+import { getPollCount } from "~/services/polls.client";
+import useSWR from "swr";
 
 export default function Index() {
-  const response: ActionData = {};
-  const data = { polls: [], error: "" };
-
   // Load the eth context
   const { accounts, connectWallet } = useEthContext();
 
   const { toast } = useToast();
+  const { provider } = useEthContext();
+
+  const { data, isLoading, isValidating, error } = useSWR(
+    provider ? "poll_count" : null,
+    () => getPollCount(provider!)
+  );
 
   useEffect(() => {
     if (!accounts.length) {
-      console.log("No accounts found, connecting wallet");
       connectWallet();
     }
-  });
-
-  useEffect(() => {
-    console.log("Accounts: ", accounts);
-  }, [accounts]);
+  }, [accounts.length, connectWallet]);
 
   return (
     <div className="container mx-auto mt-8">
-      <h1 className="text-3xl font-bold">Current Polls</h1>
+      <div className="flex justify-between iterms-center">
+        <div className="flex justify-left gap-x-2.5 items-center">
+          <h1 className="text-3xl font-bold">Current Polls</h1>
 
-      {/* Button to create a new poll */}
-      <CreatePollDialog
-        onPollCreated={() => {
-          // Show a toast message
-          toast({
-            title: "Poll created",
-            description: "The poll was created successfully.",
-            variant: "default",
-          });
-        }}
-      />
+          {/* Badge to show the total number of polls */}
+          {data && <Badge>{data}</Badge>}
+          {isLoading || (isValidating && <LoadingSpinner />)}
+          {error && (
+            <p className="text-red-500">
+              An error occurred while fetching the poll count
+            </p>
+          )}
+        </div>
+
+        {/* Button to create a new poll */}
+        <CreatePollDialog
+          onPollCreated={() => {
+            // Show a toast message
+            toast({
+              title: "Poll created",
+              description: "The poll was created successfully.",
+              variant: "default",
+            });
+          }}
+        />
+      </div>
 
       {/* Divider */}
       <div className="border-b-2 border-gray-300 my-4" />
-
-      {/* Display a message if no polls are available */}
-      {data.polls.length === 0 && !data.error && (
-        <div className="p-4 bg-yellow-200 mx-4">
-          <h2 className="text-xl font-bold">No Polls</h2>
-          <p>There are no polls available at the moment.</p>
-        </div>
-      )}
+      {provider ? <PollList provider={provider} /> : <LoadingSpinner />}
     </div>
   );
 }

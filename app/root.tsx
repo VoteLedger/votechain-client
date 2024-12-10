@@ -41,7 +41,6 @@ export const loader: LoaderFunction = async ({ request }) => {
 export function Layout({ children }: { children: React.ReactNode }) {
   // retrieve the session data from the loader
   const data = useLoaderData<{ isAuthenticated: boolean }>();
-  console.log(data);
 
   // return the layout
   return (

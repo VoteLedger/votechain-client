@@ -28,8 +28,6 @@ export const signIn = async (
     throw new ErrorWithStatus(response.error, statusCode);
   }
 
-  console.log("Sign In Response:", response);
-
   // Otherwise, return the JWT token
   return response.data;
 };

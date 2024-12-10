@@ -17,8 +17,6 @@ export const validateCreatePoll = (
     end_time,
   } = create_poll;
 
-  console.log(create_poll);
-
   // **6. Validate 'name' Field**
   if (!name || name.trim() === "") {
     errors.name = "Name is required and cannot be empty.";

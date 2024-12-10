@@ -13,7 +13,7 @@ export const EthContextProvider: React.FC<Props> = ({ children }) => {
   // Funzione per connettersi al wallet
   const connectWallet = async () => {
     if (!window.ethereum) {
-      alert("MetaMask non è installato!");
+      alert("MetaMask is not available!");
       return;
     }
 

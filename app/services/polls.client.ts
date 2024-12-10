@@ -1,4 +1,4 @@
-import { CreatePoll } from "~/types/services";
+import { CreatePoll, Poll } from "~/types/services";
 import { getContract } from "~/lib/ethers.client";
 import { BrowserProvider, Interface } from "ethers";
 
@@ -10,18 +10,37 @@ export interface PollRecipt {
 export async function getPollCount(provider: BrowserProvider): Promise<number> {
   const contract = await getContract(provider);
   const count = await contract.poll_count();
-  return count.toNumber();
+  return Number(count);
 }
 
-export async function getPolls(provider: BrowserProvider): Promise<unknown[]> {
+export async function getPolls(provider: BrowserProvider): Promise<Poll[]> {
   const contract = await getContract(provider);
-  const count = await contract.poll_count();
-  const polls = [];
+  const count = await getPollCount(provider);
+  const polls: Poll[] = [];
+
   for (let i = 0; i < count; i++) {
-    const poll = await contract.polls(i);
+    const result = await contract.polls(i);
+
+    // Parse the poll data into a Poll object
+    const poll: Poll = {
+      id: BigInt(result.id),
+      name: result.name,
+      description: result.description,
+      start_time: new Date(Number(result.start_time) * 1000),
+      end_time: new Date(Number(result.end_time) * 1000),
+      winner: result.winner,
+      is_ended: result.is_ended,
+      owner: result.owner,
+
+      // FIXME: Implement the options and votes
+      voted: false,
+      options: [],
+      votes: {},
+    };
+
+    // Add poll to list
     polls.push(poll);
   }
-  console.log(polls);
   return polls;
 }
 
@@ -41,7 +60,6 @@ export async function createPoll(
   );
 
   // wait for the transaction to be mined
-  console.log("Transaction hash: ", tx.hash, ". Waiting for confirmation...");
   const rc = await tx.wait();
 
   // parse the logs
