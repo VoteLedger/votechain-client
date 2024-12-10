@@ -19,7 +19,7 @@ export async function hasVoted(
 ): Promise<boolean> {
   const contract = await getContract(provider);
   const result = await contract.has_voted(pollId);
-  return Boolean(result[0]);
+  return Boolean(result);
 }
 
 export async function castVote(
@@ -54,8 +54,6 @@ export async function getPolls(provider: BrowserProvider): Promise<Poll[]> {
 
     // Check whether we have already voted!
     const hasUservoted = await hasVoted(provider, BigInt(result.id));
-
-    console.log("Has user voted: ", hasUservoted);
 
     // Parse the poll data into a Poll object
     const poll: Poll = {
