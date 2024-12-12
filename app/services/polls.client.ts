@@ -27,17 +27,9 @@ export async function castVote(
   pollId: bigint,
   optionId: bigint
 ): Promise<void> {
-  // get the contract
   const contract = await getContract(provider);
   const tx = await contract.cast_vote(pollId, optionId);
-
-  console.log("Vote done. Now waiting for the transaction to be mined");
-
-  // wait for the transaction to be mined
-  const rc = await tx.wait();
-
-  // log the result
-  console.log("Vote casted successfully: ", rc);
+  await tx.wait();
   return Promise.resolve();
 }
 
@@ -81,8 +73,7 @@ export async function endPoll(
 ): Promise<void> {
   const contract = await getContract(provider);
   const tx = await contract.end_poll(pollId);
-  const rc = await tx.wait();
-  console.log("Poll closed successfully: ", rc);
+  await tx.wait();
   return Promise.resolve();
 }
 
@@ -132,6 +123,8 @@ export async function createPoll(
     Math.floor(pollInput.start_time.getTime() / 1000),
     Math.floor(pollInput.end_time.getTime() / 1000)
   );
+
+  console.log("Transaction: ", typeof tx);
 
   // wait for the transaction to be mined
   const rc = await tx.wait();

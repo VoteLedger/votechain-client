@@ -7,8 +7,6 @@ export const signIn = async (
   signature: string,
   account: string
 ) => {
-  console.log("Signing in with message:", message);
-  // Request the API server to signIn using the provided signature.
   // If the signature is known to the server, it will return a JWT token.
   const { response, statusCode } = await fetcher<SignInApiResponse>(
     ApiEndpointUrl.signIn,

@@ -39,7 +39,6 @@ export const fetcher = async <T extends BaseApiResponse>(
         return fetcher<T>(endpoint, options, session, false);
       } catch (error) {
         // If refresh failed, force user to log in again
-        console.warn("Failed to refresh token, redirecting to login");
         throw new ErrorWithStatus("Token expired", res.status);
       }
     } else {

@@ -92,6 +92,25 @@ const PollCard: React.FC<PollCardProps> = ({
   // extract the winning option if any (will be set by the owner when closing manually the poll!)
   const winningOption = poll.winner ? poll.winner : null;
 
+  // create error decoder
+  const errorDecoder = ErrorDecoder.create();
+
+  const handleContractError = (error: unknown) => {
+    errorDecoder
+      .decode(error)
+      .then((decodedError) => {
+        console.error("Error while voting", decodedError.reason);
+        onError && onError(decodedError.reason || DEFAULT_VOTING_ERROR_MESSAGE);
+      })
+      .catch(() => {
+        onError && onError(DEFAULT_VOTING_ERROR_MESSAGE);
+      })
+      .finally(() => {
+        setOptionsDisabled(false);
+        setLoadingOption(null);
+      });
+  };
+
   const onClosePoll = async () => {
     setIsButtonLoading(true);
     setOptionsDisabled(true);
@@ -106,23 +125,7 @@ const PollCard: React.FC<PollCardProps> = ({
           setIsButtonLoading(false);
         });
     } catch (error) {
-      // decode error to get the error message from the smart contract
-      const errorDecoder = ErrorDecoder.create();
-
-      errorDecoder
-        .decode(error)
-        .then((decodedError) => {
-          console.error("Error while voting", decodedError.reason);
-          onError &&
-            onError(decodedError.reason || DEFAULT_VOTING_ERROR_MESSAGE);
-        })
-        .catch(() => {
-          onError && onError(DEFAULT_VOTING_ERROR_MESSAGE);
-        })
-        .finally(() => {
-          setOptionsDisabled(false);
-          setLoadingOption(null);
-        });
+      handleContractError(error);
     }
   };
 
@@ -149,23 +152,7 @@ const PollCard: React.FC<PollCardProps> = ({
           setLoadingOption(null);
         });
     } catch (error) {
-      // decode error to get the error message from the smart contract
-      const errorDecoder = ErrorDecoder.create();
-
-      errorDecoder
-        .decode(error)
-        .then((decodedError) => {
-          console.error("Error while voting", decodedError.reason);
-          onError &&
-            onError(decodedError.reason || DEFAULT_VOTING_ERROR_MESSAGE);
-        })
-        .catch(() => {
-          onError && onError(DEFAULT_VOTING_ERROR_MESSAGE);
-        })
-        .finally(() => {
-          setOptionsDisabled(false);
-          setLoadingOption(null);
-        });
+      handleContractError(error);
     }
   };
 

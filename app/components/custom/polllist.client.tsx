@@ -37,8 +37,6 @@ export function PollList({
 }: PollListProps) {
   const { toast } = useToast();
 
-  console.log("Polls: ", polls);
-
   // callback with sorted + filtered polls
   const sortedPolls = useCallback(() => {
     return (polls || []).sort((a, b) => {

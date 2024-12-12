@@ -7,7 +7,6 @@ interface EthContextType {
   connectWallet: () => Promise<void>;
 }
 
-// Creiamo il context con valori di default
 export const EthContext = createContext<EthContextType>({
   accounts: [],
   provider: null,

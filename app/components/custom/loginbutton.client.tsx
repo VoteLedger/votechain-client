@@ -31,7 +31,6 @@ export const LoginButton: React.FC<LoginButtonProps> = ({
 
   // Get the available accounts from the user
   const connect = async (e: React.FormEvent<HTMLButtonElement>) => {
-    console.log("connect");
     // block the submit event
     e.preventDefault();
     setLoading(true);

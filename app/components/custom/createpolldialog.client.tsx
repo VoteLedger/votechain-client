@@ -135,10 +135,7 @@ export const CreatePollDialog: React.FC<CreatePollDialogProps> = ({
 
     // call the onPollCreated callback
     if (recipt) {
-      console.log("Poll created: ", recipt);
-
       // Tell SWR to revalidate the list of polls in the homepage
-      console.log("Mutating polls");
       mutate("polls");
 
       // notify that the poll has been created
