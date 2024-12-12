@@ -5,41 +5,33 @@ import { generateMessage } from "~/lib/metamask";
 
 export interface LoginButtonProps extends Omit<ButtonProps, "onClick"> {
   text: string;
-  onSuccess?: (
-    msg: string,
-    signature: string,
-    account: string,
-    chain_id: string
-  ) => void;
+  account: string;
+  onSuccess?: (msg: string, signature: string, account: string) => void;
   onFail?: (error: Error) => void;
 }
 
 export const LoginButton: React.FC<LoginButtonProps> = ({
   text,
+  account,
   onSuccess,
   onFail,
   ...props
 }: LoginButtonProps) => {
-  const { sdk } = useSDK();
   const [loading, setLoading] = useState(false);
+  const { sdk } = useSDK();
 
-  if (!sdk)
+  if (!sdk) {
     return (
-      <Button {...props} disabled>
-        {text}
+      <Button variant="default" {...props} disabled>
+        MetaMask is not available. Please, install the extension and try again.
       </Button>
     );
-
-  const provider = sdk.getProvider();
-  if (!provider) {
-    return (
-      <Button {...props} disabled>
-        {text}
-      </Button>
-    );
+    // throw new Error("SDK is not available");
   }
 
+  // Get the available accounts from the user
   const connect = async (e: React.FormEvent<HTMLButtonElement>) => {
+    console.log("connect");
     // block the submit event
     e.preventDefault();
     setLoading(true);
@@ -49,19 +41,11 @@ export const LoginButton: React.FC<LoginButtonProps> = ({
       // Generate a random message to sign
       const message = generateMessage();
 
-      // recover accounts
-      const address = provider.getSelectedAddress();
-      if (!address) {
-        throw new Error("No account selected");
-      }
-
-      const chain_id = provider.getChainId();
-
       const signature = await sdk.connectAndSign({
         msg: message,
       });
 
-      onSuccess && onSuccess(message, signature, address, chain_id);
+      onSuccess && onSuccess(message, signature, account);
     } catch (err) {
       if (err instanceof Error) {
         onFail && onFail(err);

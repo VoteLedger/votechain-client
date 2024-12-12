@@ -1,6 +1,10 @@
 import { BrowserProvider, Contract, Interface } from "ethers";
 
-const CONTRACT_ADDRESS = "0x8476FC408B2dF4d03E9705FC2768d9179B62800c";
+if (!process.env.CONTRACT_ADDRESS) {
+  throw new Error("CONTRACT_ADDRESS is required");
+}
+
+const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS || "";
 
 const getContract = async (provider: BrowserProvider) => {
   // define the abi

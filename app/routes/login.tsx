@@ -12,6 +12,11 @@ import {
   destroySession,
 } from "~/lib/session";
 import { getErrorMessageForStatusCode } from "~/lib/error";
+import { useToast } from "~/hooks/use-toast.client";
+import { useEthContext } from "~/providers/ethcontextprovider.client";
+import useSWR from "swr";
+import { getSelectedAccount } from "~/services/metamask.client";
+import { LoadingSpinner } from "~/components/ui/loadingspinner";
 
 type LoaderData = {
   error?: string;
@@ -20,6 +25,15 @@ type LoaderData = {
 export default function LoginPage() {
   const submit = useSubmit();
   const data = useLoaderData<LoaderData>();
+
+  const { toast } = useToast();
+  const { provider } = useEthContext();
+
+  // get the account address
+  const { data: selectedAccount, isLoading } = useSWR(
+    provider && "account",
+    () => getSelectedAccount(provider!)
+  );
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
@@ -37,19 +51,38 @@ export default function LoginPage() {
         )}
 
         <Form method="post">
-          <LoginButton
-            name="signature"
-            className="w-full bg-blue-500 text-white py-2 rounded"
-            text="Login with MetaMask"
-            onSuccess={(msg, sign, acc) => {
-              // Send form data to the server
-              const formData = new FormData();
-              formData.append("message", msg);
-              formData.append("signature", sign);
-              formData.append("account", acc);
-              submit(formData, { method: "POST" });
-            }}
-          />
+          {isLoading && (
+            <LoadingSpinner> Waiting for MetaMask...</LoadingSpinner>
+          )}
+          {provider && !selectedAccount && (
+            <div className={"p-4 mx-4 bg-yellow-50"}>
+              <h2 className="text-xl font-bold">No Account Selected</h2>
+              <p>Please select an account in MetaMask to continue</p>
+            </div>
+          )}
+          {selectedAccount && (
+            <LoginButton
+              account={selectedAccount}
+              name="signature"
+              className="w-full bg-blue-500 text-white py-2 rounded"
+              text="Login with MetaMask"
+              onSuccess={(msg, sign, acc) => {
+                // Send form data to the server
+                const formData = new FormData();
+                formData.append("message", msg);
+                formData.append("signature", sign);
+                formData.append("account", acc);
+                submit(formData, { method: "POST" });
+              }}
+              onFail={(err) => {
+                toast({
+                  title: "Error",
+                  description: err.message,
+                  variant: "destructive",
+                });
+              }}
+            />
+          )}
         </Form>
       </Card>
     </div>
