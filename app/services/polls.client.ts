@@ -1,5 +1,5 @@
 import { CreatePoll, Poll, PollOption } from "~/types/services";
-import { getContract } from "~/lib/ethers.client";
+import { getContract } from "~/lib/ethers";
 import { BrowserProvider, Interface } from "ethers";
 
 export interface PollRecipt {

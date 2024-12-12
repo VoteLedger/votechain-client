@@ -14,8 +14,7 @@ export interface EthereumProvider {
 declare global {
   interface Window {
     ENV: {
-      REMIX_APP_URL: string;
-      REMIX_API_URL: string;
+      CONTRACT_ADDRESS: string;
     };
     ethereum: EthereumProvider;
   }

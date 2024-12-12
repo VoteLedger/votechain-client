@@ -30,17 +30,38 @@ export const links: LinksFunction = () => [
   { rel: "stylesheet", href: tailwind_style },
 ];
 
+interface ClientSideEnv {
+  CONTRACT_ADDRESS: string;
+}
+
+interface LoaderData {
+  isAuthenticated: boolean;
+  ENV: ClientSideEnv;
+}
+
 export const loader: LoaderFunction = async ({ request }) => {
+  // Load environment variables
+
+  if (!process.env.CONTRACT_ADDRESS) {
+    throw new Error("CONTRACT_ADDRESS is required");
+  }
+
+  const env = {
+    CONTRACT_ADDRESS: process.env.CONTRACT_ADDRESS,
+  } satisfies ClientSideEnv;
+
   // Check if we have an error
-  // extract the session cookie from the request headers
   const session = await getSession(request.headers.get("Cookie"));
 
-  return Response.json({ isAuthenticated: isSession(session) });
+  return Response.json({
+    isAuthenticated: isSession(session),
+    ENV: env,
+  } satisfies LoaderData);
 };
 
 export function Layout({ children }: { children: React.ReactNode }) {
   // retrieve the session data from the loader
-  const data = useLoaderData<{ isAuthenticated: boolean }>();
+  const data = useLoaderData<LoaderData>();
 
   // return the layout
   return (
@@ -54,6 +75,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <body>
         <Navbar isAuthenticated={(data && data.isAuthenticated) || false} />
         <main>{children}</main>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.ENV = ${JSON.stringify(data.ENV)}`,
+          }}
+        />
         <ScrollRestoration />
         <Scripts />
         <ClientOnly>{() => <Toaster />}</ClientOnly>
