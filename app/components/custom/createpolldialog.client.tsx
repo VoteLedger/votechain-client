@@ -154,21 +154,28 @@ export const CreatePollDialog: React.FC<CreatePollDialogProps> = ({
     });
 
     // if all is valid, create the poll
-    // const recipt = await createPoll(provider, poll);
-    submitJob(createPoll(provider, poll), (recipt) => {
-      // call the onPollCreated callback
-      if (recipt) {
-        // Tell SWR to revalidate the list of polls in the homepage
-        mutate("polls");
-        // notify parent component of success
-        onPollCreated && onPollCreated(recipt);
-      } else {
-        onError && onError("Failed to create poll.");
-        // if the poll was not created, show an error
-        setErrors({ server: "Failed to create poll." });
+    submitJob(
+      {
+        id: "create-poll",
+        name: "Create Poll",
+        description: "Creating a new poll on the VoteChain network...",
+      },
+      createPoll(provider, poll),
+      (recipt) => {
+        // call the onPollCreated callback
+        if (recipt) {
+          // Tell SWR to revalidate the list of polls in the homepage
+          mutate("polls");
+          // notify parent component of success
+          onPollCreated && onPollCreated(recipt);
+        } else {
+          onError && onError("Failed to create poll.");
+          // if the poll was not created, show an error
+          setErrors({ server: "Failed to create poll." });
+        }
+        setIsSubmitting(false);
       }
-      setIsSubmitting(false);
-    });
+    );
   };
 
   return (

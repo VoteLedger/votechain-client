@@ -1,7 +1,7 @@
 import type { LoaderFunction, MetaFunction } from "@remix-run/node";
 import { redirect } from "@remix-run/react";
 import { getSession, isSession } from "~/lib/session";
-import { CreatePollDialog } from "~/components/custom/createpolldialog";
+import { CreatePollDialog } from "~/components/custom/createpolldialog.client";
 import { Badge } from "~/components/ui/badge";
 import { useEthContext } from "~/providers/ethcontextprovider";
 import { useEffect } from "react";

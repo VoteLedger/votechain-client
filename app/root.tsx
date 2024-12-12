@@ -41,7 +41,6 @@ interface LoaderData {
 
 export const loader: LoaderFunction = async ({ request }) => {
   // Load environment variables
-
   if (!process.env.CONTRACT_ADDRESS) {
     throw new Error("CONTRACT_ADDRESS is required");
   }
@@ -53,10 +52,11 @@ export const loader: LoaderFunction = async ({ request }) => {
   // Check if we have an error
   const session = await getSession(request.headers.get("Cookie"));
 
-  return Response.json({
+  // return the loaded data
+  return {
     isAuthenticated: isSession(session),
     ENV: env,
-  } satisfies LoaderData);
+  } satisfies LoaderData;
 };
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -77,7 +77,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <main>{children}</main>
         <script
           dangerouslySetInnerHTML={{
-            __html: `window.ENV = ${JSON.stringify(data.ENV)}`,
+            __html: `window.ENV = ${JSON.stringify((data && data.ENV) || {})}`,
           }}
         />
         <ScrollRestoration />

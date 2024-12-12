@@ -1,6 +1,6 @@
 import React, { useState, useEffect, PropsWithChildren } from "react";
 import { ethers, BrowserProvider } from "ethers";
-import { EthContext } from "~/contexts/ethcontext";
+import { EthContext } from "~/contexts/ethcontext.client";
 
 export const EthContextProvider: React.FC<PropsWithChildren> = ({
   children,
