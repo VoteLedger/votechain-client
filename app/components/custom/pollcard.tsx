@@ -260,7 +260,9 @@ const PollCard: React.FC<PollCardProps> = ({
                           : bgColors[0]
                       )}
                       onClick={() => onVoteHandler(index)}
-                      disabled={isEnded || hasVoted || optionsDisabled}
+                      disabled={
+                        isEnded || isExpired || hasVoted || optionsDisabled
+                      }
                       variant={isWinner ? "ghost" : "default"}
                     >
                       {loadingOption === index && <LoadingSpinner />}

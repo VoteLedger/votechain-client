@@ -149,7 +149,7 @@ export const CreatePollDialog: React.FC<CreatePollDialogProps> = ({
     toast({
       title: "Creating Poll",
       description:
-        "Your poll is being processed. The process may take some time! Please wait.",
+        "Your poll is being processed. The process may take a few seconds.",
       variant: "default",
     });
 
