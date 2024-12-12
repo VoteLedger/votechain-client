@@ -13,7 +13,7 @@ import {
 } from "~/lib/session";
 import { getErrorMessageForStatusCode } from "~/lib/error";
 import { useToast } from "~/hooks/use-toast.client";
-import { useEthContext } from "~/providers/ethcontextprovider.client";
+import { useEthContext } from "~/providers/ethcontextprovider";
 import useSWR from "swr";
 import { getSelectedAccount } from "~/services/metamask.client";
 import { LoadingSpinner } from "~/components/ui/loadingspinner";

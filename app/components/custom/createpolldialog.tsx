@@ -14,9 +14,13 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea"; // Assuming you have a Textarea component
 import { validateCreatePoll } from "~/lib/validator";
-import { useEthContext } from "~/providers/ethcontextprovider.client";
+import { useEthContext } from "~/providers/ethcontextprovider";
 import { createPoll, PollRecipt } from "~/services/polls.client";
 import { CreatePoll } from "~/types/services";
+import { LoadingSpinner } from "../ui/loadingspinner";
+import { HStack } from "../util/stack";
+import { useToast } from "~/hooks/use-toast.client";
+import { useTransactionContext } from "~/providers/transactioncontextprovider";
 
 export type PollFormFields = [
   "name",
@@ -44,9 +48,17 @@ export const CreatePollDialog: React.FC<CreatePollDialogProps> = ({
   // const transition = useTransition();
   const [options, setOptions] = useState<string[]>(["", ""]);
   const [errors, setErrors] = useState<FormErrors>({});
+  const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+
+  // Load context to handle transactions
+  const { submitJob } = useTransactionContext();
 
   // Load provider from context
   const { provider } = useEthContext();
+
+  // Load toaster to send notifications
+  const { toast } = useToast();
 
   // Load mutate function from SWR provider
   const { mutate } = useSWRConfig();
@@ -91,6 +103,7 @@ export const CreatePollDialog: React.FC<CreatePollDialogProps> = ({
 
   const handleSumbit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setIsSubmitting(true);
 
     // remove all errors
     setErrors({});
@@ -128,27 +141,38 @@ export const CreatePollDialog: React.FC<CreatePollDialogProps> = ({
     const val_errors = validateCreatePoll(sanitizedPoll);
     if (val_errors) {
       setErrors(val_errors);
+      setIsSubmitting(false);
       return;
     }
+
+    // Before starting the poll creation process, notify the user
+    toast({
+      title: "Creating Poll",
+      description:
+        "Your poll is being processed. The process may take some time! Please wait.",
+      variant: "default",
+    });
+
     // if all is valid, create the poll
-    const recipt = await createPoll(provider, poll);
-
-    // call the onPollCreated callback
-    if (recipt) {
-      // Tell SWR to revalidate the list of polls in the homepage
-      mutate("polls");
-
-      // notify that the poll has been created
-      onPollCreated && onPollCreated(recipt);
-    } else {
-      onError && onError("Failed to create poll.");
-      // if the poll was not created, show an error
-      setErrors({ server: "Failed to create poll." });
-    }
+    // const recipt = await createPoll(provider, poll);
+    submitJob(createPoll(provider, poll), (recipt) => {
+      // call the onPollCreated callback
+      if (recipt) {
+        // Tell SWR to revalidate the list of polls in the homepage
+        mutate("polls");
+        // notify parent component of success
+        onPollCreated && onPollCreated(recipt);
+      } else {
+        onError && onError("Failed to create poll.");
+        // if the poll was not created, show an error
+        setErrors({ server: "Failed to create poll." });
+      }
+      setIsSubmitting(false);
+    });
   };
 
   return (
-    <Dialog>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button variant="outline">New Poll</Button>
       </DialogTrigger>
@@ -300,7 +324,18 @@ export const CreatePollDialog: React.FC<CreatePollDialogProps> = ({
           </div>
 
           <DialogFooter>
-            <Button type="submit">Create Poll</Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <div className="col-span-4 text-center">
+                  <HStack>
+                    <LoadingSpinner />
+                    <p>Creating Poll...</p>
+                  </HStack>
+                </div>
+              ) : (
+                "Create Poll"
+              )}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

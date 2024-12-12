@@ -1,16 +1,14 @@
-import React, { useState, useEffect, ReactNode } from "react";
+import React, { useState, useEffect, PropsWithChildren } from "react";
 import { ethers, BrowserProvider } from "ethers";
 import { EthContext } from "~/contexts/ethcontext";
 
-interface Props {
-  children: ReactNode;
-}
-
-export const EthContextProvider: React.FC<Props> = ({ children }) => {
+export const EthContextProvider: React.FC<PropsWithChildren> = ({
+  children,
+}) => {
   const [accounts, setAccounts] = useState<string[]>([]);
   const [provider, setProvider] = useState<BrowserProvider | null>(null);
 
-  // Funzione per connettersi al wallet
+  // Connect to the wallet
   const connectWallet = async () => {
     if (!window.ethereum) {
       alert("MetaMask is not available!");
@@ -18,7 +16,7 @@ export const EthContextProvider: React.FC<Props> = ({ children }) => {
     }
 
     try {
-      // Richiedi accesso agli account
+      // Create browser provider frmo generic ethers provider
       const provider = new ethers.BrowserProvider(window.ethereum);
       const accounts = await provider.send("eth_requestAccounts", []);
       setProvider(provider);
@@ -33,7 +31,7 @@ export const EthContextProvider: React.FC<Props> = ({ children }) => {
     setAccounts(accounts);
   };
 
-  // Effetto per inizializzare il provider e gli account
+  // Lazily initialize the context provider
   useEffect(() => {
     const initialize = async () => {
       if (window.ethereum) {
