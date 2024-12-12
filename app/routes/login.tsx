@@ -1,5 +1,5 @@
 import { Card } from "~/components/ui/card";
-import { LoginButton } from "~/components/custom/loginbutton.client";
+import { LoginButton } from "~/components/custom/loginbutton";
 import { Form, redirect, useLoaderData, useSubmit } from "@remix-run/react";
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { signIn } from "~/services/auth";
