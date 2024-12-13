@@ -304,6 +304,14 @@ const PollCard: React.FC<PollCardProps> = ({
                   </li>
                 );
               })}
+              {winningOption === "TIE" && (
+                <div className="flex items-center space-x-2 rounded px-2 py-1 bg-yellow-100 text-yellow-800 font-medium">
+                  <span className="text-yellow-500">
+                    <FaCrown />
+                  </span>
+                  <span>It&apos;s a tie!</span>
+                </div>
+              )}
             </div>
           </div>
         </CardContent>
