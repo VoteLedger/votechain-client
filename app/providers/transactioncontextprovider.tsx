@@ -18,9 +18,12 @@ export const TransactionContextProvider: React.FC<PropsWithChildren> = ({
     // Add the new job to the list of jobs
     setJobs((prevJobs) => [...prevJobs, { info, job, status: "pending" }]);
 
+    console.log("Submitting job", info);
+
     job
       .then((result) => {
         // Update the job as successful
+        console.log("Job done", info);
         setJobs((prevJobs) =>
           prevJobs.map((j) =>
             j.info.id === j.info.id ? { ...j, status: "success", result } : j
@@ -32,6 +35,7 @@ export const TransactionContextProvider: React.FC<PropsWithChildren> = ({
       })
       .catch((error) => {
         // Update the job as failed
+        console.warn("Job failed", info, error);
         setJobs((prevJobs) =>
           prevJobs.map((j) =>
             j.info.id === j.info.id ? { ...j, status: "error", error } : j

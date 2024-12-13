@@ -83,14 +83,18 @@ const PollCard: React.FC<PollCardProps> = ({
 
   const { mutate } = useSWRConfig();
 
-  // check if the poll was closed officially by the owner (official result computed on-china)
-  const isEnded = poll.is_ended;
-  // check if the poll has expired (locally)
-  const isExpired = poll.end_time < new Date();
-  // check if its voted by the current user
-  const hasVoted = poll.voted;
-  // extract the winning option if any (will be set by the owner when closing manually the poll!)
-  const winningOption = poll.winner ? poll.winner : null;
+  // Memoize the computed values
+  const isEnded = useMemo(() => poll.is_ended, [poll.is_ended]);
+  const isExpired = useMemo(() => poll.end_time < new Date(), [poll.end_time]);
+  const isTooEarly = useMemo(
+    () => poll.start_time > new Date(),
+    [poll.start_time]
+  );
+  const hasVoted = useMemo(() => poll.voted, [poll.voted]);
+  const winningOption = useMemo(
+    () => (poll.winner ? poll.winner : null),
+    [poll.winner]
+  );
 
   // create error decoder
   const errorDecoder = ErrorDecoder.create();
@@ -160,19 +164,20 @@ const PollCard: React.FC<PollCardProps> = ({
     const { title, color } = (() => {
       if (isEnded) return { title: "Closed", color: "destructive" };
       if (isExpired) return { title: "Expired", color: "destructive" };
-      if (hasVoted) return { title: "Voted", color: "warning" };
+      if (hasVoted) return { title: "Voted", color: "info" };
+      if (isTooEarly) return { title: "Not Started", color: "warning" };
       return { title: "Active", color: "success" };
     })();
 
     return (
       <Badge
-        variant={color as "destructive" | "success" | "warning"}
+        variant={color as "destructive" | "success" | "warning" | "info"}
         className="text-sm"
       >
         {title}
       </Badge>
     );
-  }, [isEnded, isExpired, hasVoted]);
+  }, [isEnded, isExpired, hasVoted, isTooEarly]);
 
   const totalVotes = useMemo(
     () => poll.options.reduce((acc, option) => acc + option.votes, 0n),
@@ -220,15 +225,26 @@ const PollCard: React.FC<PollCardProps> = ({
           </div>
 
           {/* Countdown Timer */}
-          {!isEnded ? (
+          {!isEnded && !isTooEarly && (
             <Countdown
               end_date={poll.end_time}
               onEnd={() => onPollExpired && onPollExpired()}
             />
-          ) : (
+          )}
+
+          {!isTooEarly && isEnded && (
             <div className="mt-4 text-red-600 font-semibold">
               This poll has ended.
             </div>
+          )}
+
+          {isTooEarly && (
+            <Countdown
+              end_date={poll.start_time}
+              onEnd={() => {}} // Do nothing
+              text="Starts in:"
+              icon={FaClock}
+            />
           )}
         </CardHeader>
         <CardContent className="space-y-4 p-4">
@@ -261,7 +277,11 @@ const PollCard: React.FC<PollCardProps> = ({
                       )}
                       onClick={() => onVoteHandler(index)}
                       disabled={
-                        isEnded || isExpired || hasVoted || optionsDisabled
+                        isEnded ||
+                        isExpired ||
+                        isTooEarly ||
+                        hasVoted ||
+                        optionsDisabled
                       }
                       variant={isWinner ? "ghost" : "default"}
                     >

@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
 import { FaClock } from "react-icons/fa";
+import { IconType } from "react-icons/lib";
 
 interface CountdownProps {
   end_date: Date;
   stop?: boolean;
-  onEnd: () => void;
+  onEnd?: () => void;
   className?: string;
+  text?: string;
+  icon?: IconType;
 }
 
 /** Helper function to format the time difference */
@@ -29,8 +32,10 @@ function formatTimeDifference(milliseconds: number) {
 export default function Countdown({
   end_date,
   stop,
-  onEnd,
+  onEnd = () => {},
   className,
+  text = "Time left:",
+  icon = FaClock,
 }: CountdownProps) {
   const [timeLeft, setTimeLeft] = useState(end_date.getTime() - Date.now());
 
@@ -51,8 +56,10 @@ export default function Countdown({
 
   return (
     <div className="flex items-center space-x-2 text-gray-700">
-      <FaClock className="w-4 h-4 text-gray-500" />
-      <strong>Time left:</strong>
+      {icon({
+        className: "w-4 h-4 text-gray-500",
+      })}
+      <strong>{text}</strong>
       <span>{formatTimeDifference(timeLeft)}</span>
     </div>
   );

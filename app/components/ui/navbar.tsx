@@ -1,8 +1,6 @@
 import React from "react";
 import { cn } from "../../lib/utils"; // Assuming `cn` is a utility class function provided by shadcn
 import { Button } from "./button"; // Assuming you use shadcn button component
-import { JobsDropDown } from "../custom/jobsdropdown.client";
-import { ClientOnly } from "remix-utils/client-only";
 
 export interface NavbarProps {
   isAuthenticated: boolean;
@@ -22,18 +20,15 @@ const Navbar: React.FC<NavbarProps> = ({ isAuthenticated }) => {
           </a>
         </div>
 
-        {/* Right Section: Login/Sign Up or Profile */}
-        <div>
-          {/* Show list of jobs */}
-          <ClientOnly>{() => <JobsDropDown />}</ClientOnly>
-
-          {/* Load login button if logged in */}
-          {isAuthenticated && (
+        {/* Load login button if logged in */}
+        {isAuthenticated && (
+          <div>
+            {/* Show list of jobs */}
             <Button variant="outline" className="ml-4" asChild>
               <a href="/logout">Logout 👋</a>
             </Button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </nav>
   );

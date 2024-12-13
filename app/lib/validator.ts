@@ -36,7 +36,7 @@ export const validateCreatePoll = (
       .filter((opt) => opt !== "");
 
     if (options.length < 2) {
-      errors.options = "At least two options are required.";
+      errors.options = "At least two unique options are required.";
     }
   }
 
